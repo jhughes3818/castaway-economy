@@ -38,14 +38,32 @@ select{min-height:44px;padding:8px 10px}
 .banner.warn{background:rgba(255,201,74,.14);color:var(--sun)}
 .banner.bad{background:rgba(255,107,87,.16);color:var(--bad)}
 .banner.good{background:rgba(61,219,176,.14);color:var(--good)}
-.step{display:flex;align-items:center;gap:6px}
-.step select{flex:1}
-.stepper{display:flex;gap:4px;align-items:center}
-.stepper button{width:44px;padding:0}
-.stepper .q{min-width:34px;text-align:center;font-family:var(--display);font-weight:800;font-size:1.3rem}
-.side{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
-.side legend{font-size:.8rem;color:var(--muted);font-weight:700;padding:0 4px}
-fieldset{margin:0;min-width:0}
+.tstep{font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:-4px}
+.tchips{display:flex;flex-wrap:wrap;gap:6px}
+.tchip{background:var(--bg);color:var(--text);border:1px solid var(--line);border-left:6px solid var(--c);padding:8px 12px;min-height:40px;font-weight:700}
+.tchip:hover{filter:none;border-color:var(--muted);border-left-color:var(--c)}
+.tchip.on{background:var(--c);border-color:var(--c);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.tsides{display:flex;flex-direction:column;gap:8px}
+.tside{background:var(--bg);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;border-left:5px solid var(--coral)}
+.tside.get{border-left-color:var(--good)}
+.tside-h{display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:0 2px}
+.tside-h small{color:var(--muted);font-size:.75rem;font-weight:700}
+.tgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.tg{display:flex;flex-direction:column;gap:3px;border-radius:10px;padding:3px;background:var(--surface);border:2px solid transparent;min-width:0}
+.tg.on{border-color:var(--sun);background:rgba(255,201,74,.1)}
+.tg-tap{background:none;border:none;color:var(--text);padding:4px 0 2px;min-height:0;display:flex;flex-direction:column;align-items:center;line-height:1.05;border-radius:8px}
+.tg-tap:hover{filter:none;background:rgba(255,255,255,.04)}
+.tg-tap:disabled{background:none;opacity:1;cursor:default}
+.tg.off .tg-tap{opacity:.35}
+.tg-ic{font-size:1.5rem}
+.tg-q{font-family:var(--display);font-size:1.35rem;font-weight:800}
+.tg:not(.on) .tg-q{color:var(--muted)}
+.tg-tap small{color:var(--muted);font-size:.64rem;font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.tg-pm{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.tg .tb{min-height:34px;padding:0;font-size:1.15rem;border-radius:7px}
+.tsum{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;background:var(--bg);border-radius:10px;padding:10px;font-size:1.15rem}
+.tsum .arrow{color:var(--sun);font-size:1.4rem}
+button.link{background:none;border:none;color:var(--muted);min-height:0;padding:4px 6px;font-size:.85rem;text-decoration:underline}
 .offer{background:var(--bg);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;border-left:5px solid var(--line)}
 .offer.incoming{border-left-color:var(--sun)}
 .tag{display:inline-block;font-size:.8rem;font-weight:700;border-radius:6px;padding:2px 8px;background:var(--surface-2)}
@@ -83,7 +101,9 @@ var code=(params.get('c')||'').toUpperCase();
 var V=null, offset=0, es=null, draft=freshDraft(), joinInfo=null, msg='', screen='boot';
 var cache={};
 
-function freshDraft(){ return {to:'',give:[{r:'',q:1},{r:'',q:1}],get:[{r:'',q:1},{r:'',q:1}]}; }
+function zero(){ return {food:0,water:0,wood:0,stone:0,coins:0}; }
+function freshDraft(){ return {to:'',give:zero(),get:zero()}; }
+function picked(S){ return KEYS.filter(function(k){return draft[S][k]>0;}).map(function(k){return {r:k,q:draft[S][k]};}); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function items(list){ return list.map(function(x){return x.q+' '+ICON[x.r]+' '+LABEL[x.r];}).join(' + '); }
 function costText(c){ return Object.keys(c).map(function(k){return c[k]+' '+ICON[k];}).join('  '); }
@@ -219,24 +239,40 @@ function offersHTML(){
   }
   return '<div class="card"><h3>Offers</h3>'+h+'</div>';
 }
-function resOptions(sel,allowBlank){
-  var h=allowBlank?'<option value=""'+(sel===''?' selected':'')+'>— nothing —</option>':'<option value=""'+(sel===''?' selected':'')+' disabled>Pick…</option>';
-  KEYS.forEach(function(k){ h+='<option value="'+k+'"'+(sel===k?' selected':'')+'>'+ICON[k]+' '+LABEL[k]+'</option>'; });
-  return h;
-}
 function composerHTML(){
   if(V.over||V.phase!==2||V.locked) return '';
+  var others=V.islands.filter(function(i){return i.idx!==V.me.idx;});
+  var chips=others.map(function(i){
+    var on=String(draft.to)===String(i.idx);
+    return '<button class="tchip'+(on?' on':'')+'" style="--c:'+esc(i.color)+'" data-act="to" data-to="'+i.idx+'" aria-pressed="'+on+'">'+esc(i.name)+'</button>';
+  }).join('');
   var side=function(S,title){
-    var rows=[0,1].map(function(i){
-      var it=draft[S][i], hide=i===1&&!draft[S][0].r;
-      if(hide) return '';
-      var st_='<div class="stepper"><button class="sec" data-act="q" data-s="'+S+'" data-i="'+i+'" data-d="-1" aria-label="Less">−</button><span class="q">'+it.q+'</span><button class="sec" data-act="q" data-s="'+S+'" data-i="'+i+'" data-d="1" aria-label="More">+</button></div>';
-      return '<div class="step">'+(i===1&&!it.r?'':st_)+'<select data-sel="r" data-s="'+S+'" data-i="'+i+'" aria-label="Item">'+resOptions(it.r,i===1)+'</select></div>';
+    var other=S==='give'?'get':'give', used=picked(S).length;
+    var rows=KEYS.map(function(k){
+      var q=draft[S][k], have=V.me.inv[k];
+      var blocked=draft[other][k]>0;
+      var max=S==='give'?Math.min(99,have):99;
+      var canAdd=!blocked&&q<max&&(q>0||used<2);
+      var note=blocked?(S==='give'?'getting':'giving'):(S==='give'?'have '+have:'');
+      return '<div class="tg'+(q>0?' on':'')+(blocked||(S==='give'&&!have&&!q)?' off':'')+'">'+
+        '<button class="tg-tap" data-act="q" data-s="'+S+'" data-r="'+k+'" data-d="1" aria-label="Add one '+LABEL[k]+'"'+(canAdd?'':' disabled')+'>'+
+        '<span class="tg-ic" aria-hidden="true">'+ICON[k]+'</span><b class="tg-q num">'+q+'</b><small>'+(note||LABEL[k])+'</small></button>'+
+        '<div class="tg-pm"><button class="sec tb" data-act="q" data-s="'+S+'" data-r="'+k+'" data-d="-1" aria-label="One less '+LABEL[k]+'"'+(q>0?'':' disabled')+'>−</button>'+
+        '<button class="sec tb" data-act="q" data-s="'+S+'" data-r="'+k+'" data-d="1" aria-label="One more '+LABEL[k]+'"'+(canAdd?'':' disabled')+'>+</button></div></div>';
     }).join('');
-    return '<fieldset class="side"><legend>'+title+'</legend>'+rows+'</fieldset>';
+    return '<div class="tside '+S+'"><div class="tside-h"><b>'+title+'</b><small>'+(used>=2?'2 goods max':'tap to add · up to 2 goods')+'</small></div><div class="tgrid">'+rows+'</div></div>';
   };
-  var opts='<option value=""'+(draft.to===''?' selected':'')+' disabled>Choose an island…</option>'+V.islands.filter(function(i){return i.idx!==V.me.idx;}).map(function(i){return '<option value="'+i.idx+'"'+(String(draft.to)===String(i.idx)?' selected':'')+'>'+esc(i.name)+'</option>';}).join('');
-  return '<div class="card"><h3>Make an offer</h3><select data-sel="to" aria-label="Trade with">'+opts+'</select>'+side('give','You give')+side('get','You get')+'<div class="err" id="draftErr">'+esc(msg)+'</div><button data-act="send">Send offer</button><div class="muted">The other team has to accept before anything moves. You can offer up to 2 different goods each way, coins included.</div></div>';
+  var give=picked('give'), get=picked('get'), toI=others.filter(function(i){return String(i.idx)===String(draft.to);})[0];
+  var fmt=function(l){ return l.length?l.map(function(x){return '<b>'+x.q+'</b> '+ICON[x.r];}).join(' + '):'<span class="muted">?</span>'; };
+  var ready=toI&&give.length&&get.length;
+  var summary='<div class="tsum"><span>'+fmt(give)+'</span><span class="arrow" aria-hidden="true">⇄</span><span>'+fmt(get)+'</span></div>';
+  var dirty=give.length||get.length||draft.to!=='';
+  return '<div class="card composer"><div class="row spread"><h3>Make an offer</h3>'+(dirty?'<button class="sec link" data-act="clear">Clear</button>':'')+'</div>'+
+    '<div class="tstep">1. Trade with</div><div class="tchips">'+chips+'</div>'+
+    '<div class="tstep">2. Choose goods</div><div class="tsides">'+side('give','You give')+side('get','You get')+'</div>'+
+    summary+'<div class="err" id="draftErr">'+esc(msg)+'</div>'+
+    '<button data-act="send"'+(ready?'':' disabled')+'>'+(toI?'Send offer to '+esc(toI.name):'Send offer')+'</button>'+
+    '<div class="muted">The other team has to accept before anything moves.</div></div>';
 }
 function projectsHTML(){
   if(V.over||V.phase!==3||!V.settled) return '';
@@ -261,18 +297,19 @@ function overHTML(){
 function onChange(e){
   var t=e.target, sel=t.dataset.sel; if(!sel) return;
   if(sel==='to') draft.to=t.value;
-  if(sel==='r'){ var row=draft[t.dataset.s][+t.dataset.i]; row.r=t.value; if(+t.dataset.i===0&&!t.value){ draft[t.dataset.s][1].r=''; } }
   msg=''; render();
 }
 function onClick(e){
   var b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
   var a=b.dataset.act;
-  if(a==='q'){ var row=draft[b.dataset.s][+b.dataset.i]; row.q=Math.max(1,Math.min(30,row.q+(+b.dataset.d))); msg=''; render(); }
+  if(a==='q'){ var S=b.dataset.s, k=b.dataset.r; draft[S][k]=Math.max(0,Math.min(99,draft[S][k]+(+b.dataset.d))); msg=''; render(); }
+  else if(a==='to'){ draft.to=String(draft.to)===b.dataset.to?'':b.dataset.to; msg=''; render(); }
+  else if(a==='clear'){ draft=freshDraft(); msg=''; render(); }
   else if(a==='send'){
-    function pack(S){ var out=[]; draft[S].forEach(function(x){ if(x.r) out.push({r:x.r,q:x.q}); }); return out; }
-    var give=pack('give'), get=pack('get');
+    var give=picked('give'), get=picked('get');
     if(draft.to===''){ msg='Choose an island to trade with.'; return render(); }
     if(!give.length||!get.length){ msg='Pick at least one good on each side.'; return render(); }
+    if(give.length>2||get.length>2){ msg='Up to 2 different goods each way.'; return render(); }
     var gk=give.map(function(x){return x.r;}), bad=get.some(function(x){return gk.indexOf(x.r)>=0;});
     if(bad){ msg='You cannot give and get the same good.'; return render(); }
     for(var i=0;i<give.length;i++){ if(V.me.inv[give[i].r]<give[i].q){ msg='You only have '+V.me.inv[give[i].r]+' '+LABEL[give[i].r]+'.'; return render(); } }

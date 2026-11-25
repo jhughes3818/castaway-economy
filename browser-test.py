@@ -29,11 +29,11 @@ async def main():
         await host.click('button.big')  # open market
         await host.wait_for_selector('#timer')
         await host.click('button[data-t=start]')
-        await s1.wait_for_selector('#s-composer select[data-sel=to]'); 
-        # give s1 something to trade via UI choices
-        await s1.select_option('select[data-sel=to]','1')
-        await s1.select_option('select[data-sel=r][data-s=give][data-i="0"]','food')
-        await s1.select_option('select[data-sel=r][data-s=get][data-i="0"]','coins')
+        await s1.wait_for_selector('#s-composer [data-act=to]')
+        # give s1 something to trade via the tap-to-add tiles
+        await s1.click('[data-act=to][data-to="1"]')
+        await s1.click('[data-act=q][data-s=give][data-r=food][data-d="1"]')
+        await s1.click('[data-act=q][data-s=get][data-r=coins][data-d="1"]')
         await s1.click('[data-act=send]')
         await s2.wait_for_selector('.offer.incoming'); print('student2 got the offer')
         await s2.click('[data-act=resp][data-a=accept]')
