@@ -134,7 +134,7 @@ function common(g) {
     islands: st.islands.map((i, k) => ({ idx: k, name: i.name, color: i.color, pts: i.pts, claimed: !!g.teams[k] })),
     board: boardView(g),
     scores: st.over ? L.finalScores(st) : null,
-    constants: { coinsPerPoint: L.SCORE.coinsPerPoint, allMet: L.SCORE.allMet, missing: L.SCORE.missing }
+    constants: { coinsPerPoint: L.SCORE.coinsPerPoint, allMet: L.SCORE.allMet, missing: L.SCORE.missing, baseNeeds: L.BASE_NEEDS, startCoins: L.START_COINS }
   };
 }
 function projectsView(st, isl) {
