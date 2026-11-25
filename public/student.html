@@ -81,6 +81,19 @@ button.link{background:none;border:none;color:var(--muted);min-height:0;padding:
 .deal-card .dc-items{font-size:1rem;flex-basis:100%}
 .deal-card .dc-isl{font-size:1.05rem}
 td.n,th.n{text-align:right}
+.top-r{display:flex;align-items:center;gap:10px}
+button.rulesbtn{background:var(--surface-2);color:var(--text);border-color:var(--line);min-height:40px;padding:6px 12px;font-size:.9rem}
+button.rulesbtn:hover{filter:none;border-color:var(--muted)}
+dialog.rules{background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:0;width:min(600px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
+dialog.rules::backdrop{background:rgba(0,0,0,.6)}
+.rules-h{position:sticky;top:0;background:var(--surface);display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.rules-h h2{font-size:1.4rem;font-weight:800}
+.rules-b{padding:4px 16px 18px;display:flex;flex-direction:column;gap:4px}
+.rules-b h3{font-size:1.05rem;font-weight:800;margin-top:12px;color:var(--sun)}
+.rules-b p{margin:0}
+.rules-b ul,.rules-b ol{margin:2px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.rules-b .proj{margin-top:4px}
+.rules-b .now{font-size:.85rem;color:var(--good);font-weight:700}
 .toast{position:fixed;left:12px;right:12px;bottom:14px;max-width:616px;margin:0 auto;background:var(--sun);color:var(--sun-ink);border-radius:12px;padding:12px 14px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.5);z-index:5}
 @media (max-width:380px){.inv-i b{font-size:1.4rem}.timer{font-size:2.8rem}}
 </style>
@@ -88,6 +101,7 @@ td.n,th.n{text-align:right}
 <body>
 <main id="app"></main>
 <div id="toast" class="toast" hidden></div>
+<dialog id="rules" class="rules" aria-labelledby="rulesTitle"><div class="rules-h"><h2 id="rulesTitle">How to play</h2><button class="sec" id="rulesClose">Close</button></div><div class="rules-b" id="rulesBody"></div></dialog>
 <script>
 (function(){
 'use strict';
@@ -160,7 +174,7 @@ function mmss(s){ return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function render(){
   if(!V||screen!=='game') return;
   var me=V.me, st=V;
-  setHTML('s-top','<div class="top" style="--c:'+esc(me.color)+'"><div><div class="name">'+esc(me.name)+'</div><div class="sub">Round '+V.round+' of '+V.rounds+(V.over?' · Game over':' · '+PHASES[V.phase])+'</div></div><div class="pts"><b class="num">'+me.pts+'</b>points</div></div>');
+  setHTML('s-top','<div class="top" style="--c:'+esc(me.color)+'"><div><div class="name">'+esc(me.name)+'</div><div class="sub">Round '+V.round+' of '+V.rounds+(V.over?' · Game over':' · '+PHASES[V.phase])+'</div></div><div class="top-r"><button class="rulesbtn" data-act="rules" aria-haspopup="dialog">? Rules</button><div class="pts"><b class="num">'+me.pts+'</b>points</div></div></div>');
   setHTML('s-status',statusHTML());
   setHTML('s-inv',invHTML());
   setHTML('s-offers',offersHTML());
@@ -293,6 +307,45 @@ function overHTML(){
   }).join('')+'</table></div>';
 }
 
+function needsText(n){ return KEYS.filter(function(k){return n[k];}).map(function(k){return n[k]+' '+ICON[k]+' '+LABEL[k];}).join(', '); }
+function rulesHTML(){
+  var c=V.constants, base=c.baseNeeds||{}, per=c.coinsPerPoint;
+  var changed=V.needs&&KEYS.some(function(k){return (V.needs[k]||0)!==(base[k]||0);});
+  var h='<h3>The goal</h3><p>Finish the game with the most points. There are '+V.rounds+' rounds. Every island starts with '+(c.startCoins!=null?c.startCoins+' 🪙 coins':'some coins')+' and makes different goods, so you will need to trade.</p>';
+  h+='<h3>Each round</h3><ol>'+
+    '<li><b>Event.</b> Your teacher reveals an event card. It can change what islands make, what they need, or hand out or take away goods.</li>'+
+    '<li><b>Production.</b> Your island makes its goods and they are added to your store.</li>'+
+    '<li><b>Market.</b> Trade with other islands until the timer runs out. Then the market locks.</li>'+
+    '<li><b>Settle up.</b> Your needs are paid from your goods. Then you can buy projects with what is left.</li></ol>';
+  h+='<h3>Needs</h3><p>Every round each island must pay: <b>'+esc(needsText(base))+'</b>. The coins are the tax.</p>'+
+    (changed?'<p class="now">This round\'s event changes it to: '+esc(needsText(V.needs))+'</p>':'');
+  h+='<h3>How points are awarded</h3><ul>'+
+    '<li>Pay all your needs in full: <b>+'+c.allMet+' points</b>.</li>'+
+    '<li>Short on needs: <b>−'+c.missing+' points for every missing good</b> (for example, 1 Food short and 1 Water short is −'+(c.missing*2)+').</li>'+
+    '<li>Buy projects for the points shown on each one.</li>'+
+    '<li>At the end, every <b>'+per+' leftover coins = 1 point</b>.</li></ul>';
+  h+='<h3>Trading</h3><ul>'+
+    '<li>Pick an island, choose what you give and what you get, and send the offer.</li>'+
+    '<li>Up to 2 different goods each way. Coins count as a good.</li>'+
+    '<li>You cannot give and get the same good in one offer.</li>'+
+    '<li>Nothing moves until the other island presses <b>Accept</b>. You can cancel an offer while it is waiting.</li>'+
+    '<li>When the timer hits zero the market locks. Unanswered offers time out.</li></ul>';
+  h+='<h3>Projects</h3><p>After needs are paid you can spend leftover goods on projects. Most can be bought once; the Feast can be bought again.</p>'+
+    (V.projects||[]).map(function(p){ return '<div class="proj"><div><div class="t">'+esc(p.name)+'</div><div class="muted">'+costText(p.cost)+' → '+esc(p.blurb)+'</div></div></div>'; }).join('');
+  h+='<h3>Tips</h3><ul><li>Check the red "Still need" tag on your goods before the market closes.</li><li>Big piles can be risky. Some events take from them.</li><li>Coins pay the tax and count at the end, so do not spend them all.</li></ul>';
+  return h;
+}
+function openRules(){
+  var d=document.getElementById('rules'); document.getElementById('rulesBody').innerHTML=rulesHTML();
+  if(d.showModal){ if(!d.open) d.showModal(); } else d.setAttribute('open','');
+  document.getElementById('rulesClose').focus();
+}
+(function(){
+  var d=document.getElementById('rules');
+  document.getElementById('rulesClose').onclick=function(){ if(d.close) d.close(); else d.removeAttribute('open'); };
+  d.addEventListener('click',function(e){ if(e.target===d) d.close(); });
+})();
+
 /* ---------- events ---------- */
 function onChange(e){
   var t=e.target, sel=t.dataset.sel; if(!sel) return;
@@ -302,6 +355,7 @@ function onChange(e){
 function onClick(e){
   var b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
   var a=b.dataset.act;
+  if(a==='rules'){ openRules(); return; }
   if(a==='q'){ var S=b.dataset.s, k=b.dataset.r; draft[S][k]=Math.max(0,Math.min(99,draft[S][k]+(+b.dataset.d))); msg=''; render(); }
   else if(a==='to'){ draft.to=String(draft.to)===b.dataset.to?'':b.dataset.to; msg=''; render(); }
   else if(a==='clear'){ draft=freshDraft(); msg=''; render(); }
