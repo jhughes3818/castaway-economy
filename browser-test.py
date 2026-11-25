@@ -37,7 +37,7 @@ async def main():
         await s1.click('[data-act=send]')
         await s2.wait_for_selector('.offer.incoming'); print('student2 got the offer')
         await s2.click('[data-act=resp][data-a=accept]')
-        await host.wait_for_selector('.deal'); print('host board:',(await host.inner_text('.deal')).replace('\n',' | '))
+        await host.wait_for_selector('.deal-card'); print('host board:',(await host.inner_text('.deal-card')).replace('\n',' | '))
         await host.screenshot(path='/tmp/host.png'); await s1.screenshot(path='/tmp/student1.png')
         print('errors:',errs)
         await br.close()
