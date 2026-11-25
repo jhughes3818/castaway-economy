@@ -47,11 +47,23 @@
 .timer.locked{color:var(--bad);font-size:2.8rem}
 .side .tboard .board-list{max-height:45vh;overflow-y:auto}
 .endgrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+.vidbtn{background:rgba(255,255,255,.16);color:#fff;border:2px solid rgba(255,255,255,.45);border-radius:999px;padding:5px 14px;font-weight:800;position:relative;z-index:1}
+.vidbtn:hover{background:rgba(255,255,255,.26)}
+#vid{width:min(960px,calc(100vw - 32px));max-width:none;padding:0;border:2px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:0 5px 0 var(--shadow);color:var(--text)}
+#vid::backdrop{background:rgba(10,40,50,.7)}
+#vid .vhead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px}
+#vid .vhead h2{font-size:1.4rem}
+#vid .vframe{position:relative;aspect-ratio:16/9;background:#000}
+#vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 @media (max-width:960px){.endgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div id="app"></div>
+<dialog id="vid" aria-labelledby="vidtitle">
+  <div class="vhead"><h2 id="vidtitle">How to play</h2><button class="btn small" id="vidclose">Close</button></div>
+  <div class="vframe"><iframe id="vidframe" title="Castaway Economy instruction video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen"></iframe></div>
+</dialog>
 <script>
 (function(){
 'use strict';
@@ -154,7 +166,7 @@ function render(force){
     body=standingsHTML(v)+'<main class="board"><section class="islands" aria-label="Islands">'+v.full.map(islandHTML).join('')+'</section><aside class="side">'+panels+'</aside></main>';
   }
   var steps=PHASES.map(function(p,i){var cls=v.over||i<v.phase?'done':i===v.phase?'now':''; return '<li class="'+cls+'"'+(i===v.phase&&!v.over?' aria-current="step"':'')+'>'+(i+1)+' '+p+'</li>';}).join('');
-  var html='<header class="top sea"><h1><span aria-hidden="true">🏝️</span>Castaway Economy</h1><ol class="stepper">'+steps+'</ol><div class="roundtag">'+(v.over?'Game over':'Round '+v.round+' of '+v.rounds)+'</div></header>'+
+  var html='<header class="top sea"><h1><span aria-hidden="true">🏝️</span>Castaway Economy</h1><ol class="stepper">'+steps+'</ol><button class="vidbtn" data-vid="1">&#9654; How to play</button><div class="roundtag">'+(v.over?'Game over':'Round '+v.round+' of '+v.rounds)+'</div></header>'+
     '<div class="joinbar"><div class="qr">'+qr+'</div><div><div class="muted">Students go to <b class="url">'+esc(base.replace(/^https?:\/\//,''))+'/play</b> and enter</div><div class="code">'+esc(v.code)+'</div></div><div class="joined">'+joined+' of '+v.islands.length+' teams joined</div></div>'+body;
   if(force||html!==cache){ app.innerHTML=html; cache=html; }
   tick();
@@ -167,9 +179,15 @@ app.addEventListener('click',function(e){
   var b=e.target.closest('button'); if(!b||b.disabled) return;
   if(b.dataset.p) return post(b.dataset.p);
   if(b.dataset.t){ var o={op:b.dataset.t}; if(b.dataset.s) o.s=+b.dataset.s; return post('timer',o); }
+  if(b.dataset.vid) return openVid();
   if(b.dataset.undo) return post('undo');
   if(b.dataset.rel){ if(confirm('Release this island so another device can join it?')) post('release',{idx:+b.dataset.rel}); }
 });
+var vid=document.getElementById('vid'), vframe=document.getElementById('vidframe');
+function openVid(){ vframe.src='https://www.youtube-nocookie.com/embed/krZyiBgd08U?autoplay=1&rel=0'; if(vid.showModal) vid.showModal(); else vid.setAttribute('open',''); }
+document.getElementById('vidclose').addEventListener('click',function(){ vid.close?vid.close():vid.removeAttribute('open'); });
+vid.addEventListener('close',function(){ vframe.src='about:blank'; });
+vid.addEventListener('click',function(e){ if(e.target===vid) vid.close(); });
 function connect(){
   var es=new EventSource('/api/g/'+code+'/stream?token='+encodeURIComponent(tok()||''));
   es.onmessage=function(m){ V=JSON.parse(m.data); offset=V.serverNow-Date.now(); render(); };
