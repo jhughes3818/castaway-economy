@@ -300,7 +300,7 @@ function lanAddresses() {
 }
 
 /* ---------- http ---------- */
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json', '.pdf': 'application/pdf' };
 function send(res, code, body, headers) {
   const h = Object.assign({ 'Cache-Control': 'no-store' }, headers || {});
   if (typeof body === 'object' && !Buffer.isBuffer(body)) { h['Content-Type'] = 'application/json'; body = JSON.stringify(body); }
@@ -329,6 +329,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && parts[0] === 'host') return serveStatic(res, 'host.html');
     if (req.method === 'GET' && parts[0] === 'qrcode.js') return serveStatic(res, 'qrcode.js');
     if (req.method === 'GET' && parts[0] === 'theme.css') return serveStatic(res, 'theme.css');
+    if (req.method === 'GET' && parts[0] === 'teacher-guide.pdf') return serveStatic(res, 'teacher-guide.pdf');
     if (req.method === 'GET' && parts[0] === 'lan') return send(res, 200, { addresses: lanAddresses(), port: server.address() && server.address().port });
     if (req.method === 'GET' && parts[0] === 'health') return send(res, 200, { ok: true, games: Object.keys(games).length });
 
