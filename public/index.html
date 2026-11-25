@@ -25,6 +25,10 @@
 .err:empty,.resume:empty{display:none}
 .resume{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
 .resume .muted{flex-basis:100%;font-size:.9rem}
+.how h2{display:flex;align-items:center;gap:8px}
+.how ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+.how p{margin:0}
+.guide{display:flex;align-items:center;gap:8px;font-size:.95rem}
 </style>
 </head>
 <body>
@@ -56,7 +60,19 @@
 <div class="opts"><div class="field"><label for="rounds">Rounds</label><select id="rounds"><option>4</option><option>5</option><option selected>6</option><option>7</option></select></div>
 <div class="field"><label for="tlen">Market timer (seconds)</label><input id="tlen" type="number" min="30" max="900" step="15" value="240"></div></div>
 <button class="btn primary" id="create">Create a game</button><div class="err" id="err" role="alert"></div>
+<a class="guide" href="/teacher-guide.pdf" target="_blank" rel="noopener"><span aria-hidden="true">📘</span>Teacher guide: how to run the lesson (PDF)</a>
 <div id="resume" class="resume"></div></section></div>
+<section class="panel how"><h2><span aria-hidden="true">🏝️</span>How the game works</h2>
+<p>Six island teams trade to survive over about six rounds. Each round:</p>
+<ol>
+<li><b>Event:</b> something happens (a storm, a drought, a bumper harvest, a pirate raid) that changes what goods are worth.</li>
+<li><b>Production:</b> your island makes its goods. You will have lots of some things and none of others.</li>
+<li><b>Market:</b> trade with other islands before the timer runs out. Agree your own prices.</li>
+<li><b>Settle up:</b> pay your island's needs and a coin tax, then spend what is left building projects for points.</li>
+</ol>
+<p>The team with the most points at the end wins. No island can win alone, so you will need to trade.</p>
+<p class="muted">Teachers: a full lesson takes about 90 minutes for 18 to 30 students, with one device per team and a projector. <a href="/teacher-guide.pdf" target="_blank" rel="noopener">Read the teacher guide</a> for the lesson plan, student roles and debrief questions.</p>
+</section>
 </div>
 <script>
 (function(){
