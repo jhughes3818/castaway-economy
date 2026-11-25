@@ -328,6 +328,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && parts[0] === 'play') return serveStatic(res, 'student.html');
     if (req.method === 'GET' && parts[0] === 'host') return serveStatic(res, 'host.html');
     if (req.method === 'GET' && parts[0] === 'qrcode.js') return serveStatic(res, 'qrcode.js');
+    if (req.method === 'GET' && parts[0] === 'theme.css') return serveStatic(res, 'theme.css');
     if (req.method === 'GET' && parts[0] === 'lan') return send(res, 200, { addresses: lanAddresses(), port: server.address() && server.address().port });
     if (req.method === 'GET' && parts[0] === 'health') return send(res, 200, { ok: true, games: Object.keys(games).length });
 

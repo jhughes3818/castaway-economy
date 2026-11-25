@@ -4,33 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Castaway Economy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 <style>
-:root{--bg:#0f2430;--surface:#17394a;--line:#2c6179;--text:#f3f7f9;--muted:#a9c3cf;--accent:#4fc3f7;color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:17px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-main{max-width:620px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;gap:16px}
-h1{margin:0;font-size:2.2rem} h2{margin:0;font-size:1.25rem}
-.card{background:var(--surface);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
-.muted{color:var(--muted);font-size:.92rem}
-label{display:flex;justify-content:space-between;align-items:center;gap:12px}
-input,select{font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;width:110px}
-input.code{width:100%;font-size:1.8rem;letter-spacing:.3em;text-align:center;text-transform:uppercase}
-button{font:inherit;background:var(--accent);color:#06222e;border:0;border-radius:10px;padding:12px 16px;font-weight:800;cursor:pointer;min-height:46px}
-button.sec{background:#1f4a5f;color:var(--text)}
-.err{color:#ff9b8a;font-weight:700}
+.setup{max-width:760px;margin:24px auto;padding:0 16px;display:flex;flex-direction:column;gap:20px}
+.setup h1{font-size:clamp(2.4rem,7vw,4.2rem);font-weight:800;letter-spacing:-.02em}
+.setup h1 span{color:var(--sun)}
+.lead{font-size:1.15rem;max-width:56ch;margin:0}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.panel .btn.primary{align-self:flex-start}
+.err{color:var(--bad);font-weight:700}
+.err:empty,.resume:empty{display:none}
+.resume a{margin-right:12px}
 </style>
 </head>
 <body>
-<main>
-<h1>Castaway Economy</h1>
-<div class="card"><h2>I am a student</h2><p class="muted" style="margin:0">Enter the code your teacher is showing.</p>
-<input class="code" id="jc" maxlength="4" autocomplete="off" autocapitalize="characters" aria-label="Game code"><button id="join">Join</button></div>
-<div class="card"><h2>I am a teacher</h2>
-<label>Rounds <select id="rounds"><option>4</option><option>5</option><option selected>6</option><option>7</option></select></label>
-<label>Market timer (seconds) <input id="tlen" type="number" min="30" max="900" step="15" value="240"></label>
-<button id="create">Create a game</button><div class="err" id="err"></div>
-<div id="resume"></div></div>
-</main>
+<div class="setup">
+<h1>Castaway <span>Economy</span></h1>
+<p class="lead">Each team runs an island that makes plenty of some things and none of others. To survive and build, you have to trade. Random events shake up what everything is worth.</p>
+<section class="panel"><h2>I am a student</h2><p class="muted">Enter the code your teacher is showing.</p>
+<input class="codein" id="jc" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" aria-label="Game code"><button class="btn primary" id="join">Join</button></section>
+<section class="panel"><h2>I am a teacher</h2>
+<div class="opts"><div class="field"><label for="rounds">Rounds</label><select id="rounds"><option>4</option><option>5</option><option selected>6</option><option>7</option></select></div>
+<div class="field"><label for="tlen">Market timer (seconds)</label><input id="tlen" type="number" min="30" max="900" step="15" value="240"></div></div>
+<button class="btn primary" id="create">Create a game</button><div class="err" id="err" role="alert"></div>
+<div id="resume" class="resume"></div></section>
+</div>
 <script>
 (function(){
 var $=function(i){return document.getElementById(i);};
@@ -42,7 +44,7 @@ $('create').onclick=function(){
    .catch(function(e){ $('err').textContent=e.message; });
 };
 var mine=[]; try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k.indexOf('castaway-host-')===0) mine.push(k.slice(14)); } }catch(e){}
-if(mine.length){ $('resume').innerHTML='<div class="muted">Resume a game on this computer:</div>'+mine.map(function(c){return '<a href="/host?c='+c+'" style="color:#4fc3f7;font-weight:800;margin-right:12px">'+c+'</a>';}).join(''); }
+if(mine.length){ $('resume').innerHTML='<div class="muted">Resume a game on this computer:</div>'+mine.map(function(c){return '<a href="/host?c='+c+'">'+c+'</a>';}).join(''); }
 })();
 </script>
 </body>

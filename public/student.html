@@ -4,63 +4,67 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Castaway Economy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 <style>
-:root{--bg:#0f2430;--surface:#17394a;--surface2:#1f4a5f;--line:#2c6179;--text:#f3f7f9;--muted:#a9c3cf;--good:#7ee0a0;--bad:#ff9b8a;--warn:#ffd166;--accent:#4fc3f7;color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:40px}
-main{max-width:640px;margin:0 auto;padding:10px 12px;display:flex;flex-direction:column;gap:12px}
-h1,h2,h3{margin:0;line-height:1.15}
-h2{font-size:1.15rem} h3{font-size:1rem}
-.card{background:var(--surface);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.muted{color:var(--muted);font-size:.9rem}
+/* Phone screen in the original's look. Bare buttons are the main (sun) action; .sec buttons are the quieter grey ones. */
+body{padding-bottom:40px}
+main{max-width:640px;margin:0 auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+[id^="s-"]{display:contents}
+.card{background:var(--surface);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.card h1{font-size:clamp(1.9rem,8vw,2.6rem);font-weight:800;letter-spacing:-.02em}
+.card h2{font-size:1.25rem;font-weight:800}
+.card h3{font-size:1.05rem;font-weight:800}
+.card p{margin:0}
+.muted{font-size:.92rem}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .spread{justify-content:space-between}
-.top{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:14px;color:#10202a;font-weight:800}
-.top .name{font-size:1.5rem}
-.top .sub{font-size:.85rem;font-weight:700;opacity:.85}
-.pts{font-size:1.6rem;text-align:right;line-height:1}
-.pts small{display:block;font-size:.7rem;font-weight:700}
-.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.chip{background:var(--bg);border-radius:10px;text-align:center;padding:8px 2px}
-.chip b{display:block;font-size:1.5rem;line-height:1.1}
-.chip span{font-size:.72rem;color:var(--muted)}
-.chip.short{outline:2px solid var(--bad)}
-.chip.ok{outline:2px solid transparent}
-.need{font-size:.72rem;display:block}
-.need.bad{color:var(--bad);font-weight:700} .need.good{color:var(--good)}
-button,select{font:inherit}
-button{background:var(--accent);color:#06222e;border:0;border-radius:10px;padding:11px 14px;font-weight:800;min-height:44px;cursor:pointer}
-button.sec{background:var(--surface2);color:var(--text)}
-button.bad{background:#7a3b34;color:#fff}
-button:disabled{opacity:.4;cursor:default}
-select{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;min-height:44px}
-.timer{font-size:2.6rem;font-weight:900;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
-.timer.low{color:var(--bad)}
-.banner{border-radius:12px;padding:10px 12px;font-weight:700;text-align:center}
-.banner.warn{background:#4a3a12;color:var(--warn)}
-.banner.bad{background:#4d2520;color:var(--bad)}
-.banner.good{background:#173d2a;color:var(--good)}
+.top{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:16px;background:var(--surface);border-top:8px solid var(--c)}
+.top .name{font-family:var(--display);font-weight:800;font-size:1.6rem;line-height:1.1}
+.top .sub{font-size:.88rem;font-weight:700;color:var(--muted)}
+.top .pts{text-align:right;line-height:1;color:var(--muted);font-size:.8rem;font-weight:700}
+.top .pts b{display:block;font-family:var(--display);font-size:2rem;font-weight:800;color:var(--text)}
+button{background:var(--sun);color:var(--sun-ink);border:1px solid var(--sun);border-radius:10px;padding:11px 16px;font-weight:700;min-height:44px}
+button:hover{filter:brightness(1.08)}
+button.sec{background:var(--surface-2);color:var(--text);border-color:var(--line)}
+button.sec:hover{filter:none;border-color:var(--muted)}
+button.bad{background:var(--coral);color:var(--coral-ink);border-color:var(--coral)}
+button:disabled{background:var(--surface-2);color:var(--text);border-color:var(--line);opacity:.4;cursor:not-allowed;filter:none}
+select{min-height:44px;padding:8px 10px}
+.timer{font-size:3.4rem}
+.banner{border-radius:10px;padding:10px 12px;font-weight:700;text-align:center}
+.banner.warn{background:rgba(255,201,74,.14);color:var(--sun)}
+.banner.bad{background:rgba(255,107,87,.16);color:var(--bad)}
+.banner.good{background:rgba(61,219,176,.14);color:var(--good)}
 .step{display:flex;align-items:center;gap:6px}
-.stepper{display:flex;gap:6px}
+.step select{flex:1}
+.stepper{display:flex;gap:4px;align-items:center}
 .stepper button{width:44px;padding:0}
-.stepper .q{min-width:34px;text-align:center;font-weight:900;font-size:1.2rem}
-.side{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
-.side legend{font-weight:800;padding:0 6px}
-fieldset{margin:0;padding:0;border:0;min-width:0}
-.offer{background:var(--bg);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
-.offer.incoming{outline:2px solid var(--warn)}
-.tag{font-size:.75rem;font-weight:800;border-radius:6px;padding:2px 6px;background:var(--surface2)}
-.tag.done{background:#173d2a;color:var(--good)} .tag.bad{background:#4d2520;color:var(--bad)}
-.err{color:var(--bad);font-weight:700;min-height:1.2em}
+.stepper .q{min-width:34px;text-align:center;font-family:var(--display);font-weight:800;font-size:1.3rem}
+.side{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.side legend{font-size:.8rem;color:var(--muted);font-weight:700;padding:0 4px}
+fieldset{margin:0;min-width:0}
+.offer{background:var(--bg);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;border-left:5px solid var(--line)}
+.offer.incoming{border-left-color:var(--sun)}
+.tag{display:inline-block;font-size:.8rem;font-weight:700;border-radius:6px;padding:2px 8px;background:var(--surface-2)}
+.tag.done{background:rgba(61,219,176,.14);color:var(--good)} .tag.bad{background:rgba(255,107,87,.16);color:var(--bad)}
+.err{color:var(--bad);font-weight:700}
+.err:empty{display:none}
 .islands{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.islandbtn{background:var(--surface);color:var(--text);border-left:8px solid var(--c);text-align:left}
-.proj{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--bg);border-radius:12px;padding:10px}
+.islandbtn{background:var(--bg);color:var(--text);border:1px solid var(--line);border-left:8px solid var(--c);text-align:left;font-family:var(--display);font-weight:800;font-size:1.1rem;padding:12px}
+.islandbtn:hover{filter:none;border-color:var(--muted);border-left-color:var(--c)}
+.islandbtn small{font-family:var(--body);font-weight:700;color:var(--muted);font-size:.8rem}
+.proj{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--bg);border-radius:10px;padding:10px 12px}
 .proj .t{font-weight:800}
-table{width:100%;border-collapse:collapse} td,th{padding:6px 4px;text-align:left;border-bottom:1px solid var(--line)} td.n,th.n{text-align:right}
-.toast{position:fixed;left:12px;right:12px;bottom:14px;max-width:616px;margin:0 auto;background:#fff;color:#12202a;border-radius:12px;padding:12px 14px;font-weight:700;box-shadow:0 6px 20px #0008;z-index:5}
-.deal{display:flex;gap:6px;flex-wrap:wrap;align-items:baseline;font-size:.95rem}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
-input[type=text]{font:inherit;background:var(--bg);color:var(--text);border:2px solid var(--line);border-radius:10px;padding:12px;font-size:1.6rem;text-transform:uppercase;letter-spacing:.3em;text-align:center;width:100%}
+.deal{display:flex;gap:6px 10px;flex-wrap:wrap;align-items:baseline}
+.deal-card{padding:8px 12px}
+.deal-card .dc-items{font-size:1rem;flex-basis:100%}
+.deal-card .dc-isl{font-size:1.05rem}
+td.n,th.n{text-align:right}
+.toast{position:fixed;left:12px;right:12px;bottom:14px;max-width:616px;margin:0 auto;background:var(--sun);color:var(--sun-ink);border-radius:12px;padding:12px 14px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.5);z-index:5}
+@media (max-width:380px){.inv-i b{font-size:1.4rem}.timer{font-size:2.8rem}}
 </style>
 </head>
 <body>
@@ -97,7 +101,7 @@ function act(path,body,after){ api(path,body).then(function(){ if(after) after()
 
 /* ---------- screens ---------- */
 function showCode(){
-  screen='code'; app.innerHTML='<div class="card"><h1>Castaway Economy</h1><p class="muted">Type the game code your teacher is showing.</p><input id="codeIn" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" aria-label="Game code"><button id="codeGo">Join</button><div class="err" id="codeErr"></div></div>';
+  screen='code'; app.innerHTML='<div class="card"><h1>Castaway Economy</h1><p class="muted">Type the game code your teacher is showing.</p><input id="codeIn" class="codein" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" aria-label="Game code"><button id="codeGo">Join</button><div class="err" id="codeErr"></div></div>';
   var inp=document.getElementById('codeIn'); inp.focus();
   function go(){ var c=inp.value.trim().toUpperCase(); if(c.length!==4) return; location.search='?c='+c; }
   document.getElementById('codeGo').onclick=go; inp.onkeydown=function(e){ if(e.key==='Enter') go(); };
@@ -136,7 +140,7 @@ function mmss(s){ return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function render(){
   if(!V||screen!=='game') return;
   var me=V.me, st=V;
-  setHTML('s-top','<div class="top" style="background:'+esc(me.color)+'"><div><div class="name">'+esc(me.name)+'</div><div class="sub">Round '+V.round+' of '+V.rounds+(V.over?' · Game over':' · '+PHASES[V.phase])+'</div></div><div class="pts">'+me.pts+'<small>points</small></div></div>');
+  setHTML('s-top','<div class="top" style="--c:'+esc(me.color)+'"><div><div class="name">'+esc(me.name)+'</div><div class="sub">Round '+V.round+' of '+V.rounds+(V.over?' · Game over':' · '+PHASES[V.phase])+'</div></div><div class="pts"><b class="num">'+me.pts+'</b>points</div></div>');
   setHTML('s-status',statusHTML());
   setHTML('s-inv',invHTML());
   setHTML('s-offers',offersHTML());
@@ -165,7 +169,7 @@ function statusHTML(){
   if(V_.phase===2){
     var out=(ev?eventCard(ev,true):'');
     if(V_.locked) return out+'<div class="banner bad">🔒 The market is locked. No more trades this round.</div>';
-    return out+'<div class="card"><div class="timer" id="timer">'+mmss(timerLeft())+'</div>'+(V_.timer.running?'':'<div class="muted" style="text-align:center">Timer not running yet</div>')+'</div>';
+    return out+'<div class="card"><div class="timer" id="timer" role="timer" aria-live="off">'+mmss(timerLeft())+'</div>'+(V_.timer.running?'':'<div class="muted" style="text-align:center">Timer not running yet</div>')+'</div>';
   }
   if(V_.phase===3){
     if(!V_.settled) return '<div class="banner warn">Waiting for your teacher to pay needs.</div>';
@@ -179,17 +183,17 @@ function statusHTML(){
   return h;
 }
 function eventCard(ev,compact){
-  return '<div class="card"><div class="row spread"><h2>'+esc(ev.title)+'</h2><span class="tag">'+esc(ev.term)+'</span></div><p style="margin:0">'+esc(ev.text)+'</p>'+(ev.notes&&ev.notes.length&&!compact?'<div class="muted">'+ev.notes.map(esc).join('<br>')+'</div>':'')+(compact?'':'<p class="muted" style="margin:0"><i>'+esc(ev.ask)+'</i></p>')+'</div>';
+  return '<div class="evcard'+(compact?' compact':'')+'"><span class="term">'+esc(ev.term)+'</span><h3>'+esc(ev.title)+'</h3><p>'+esc(ev.text)+'</p></div>'+(ev.notes&&ev.notes.length&&!compact?'<div class="card"><ul class="notes">'+ev.notes.map(function(n){return '<li>'+esc(n)+'</li>';}).join('')+'</ul></div>':'')+(compact?'':'<div class="ask"><b>Think about it</b>'+esc(ev.ask)+'</div>');
 }
 function invHTML(){
   var me=V.me, needs=V.needs, showNeeds=!V.over&&!(V.phase===3&&V.settled);
   var chips=KEYS.map(function(k){
     var n=needs?needs[k]||0:0, short=showNeeds&&me.inv[k]<n;
-    return '<div class="chip'+(short?' short':'')+'"><b>'+me.inv[k]+'</b><span>'+ICON[k]+' '+LABEL[k]+'</span>'+(showNeeds&&n?'<span class="need '+(short?'bad':'good')+'">need '+n+'</span>':'')+'</div>';
+    return '<div class="inv-i '+k+(short?' short':'')+'"><span class="ic">'+ICON[k]+'</span><b class="num">'+me.inv[k]+'</b><small>'+LABEL[k]+'</small>'+(showNeeds&&n?'<span class="need '+(short?'bad':'good')+'">need '+n+'</span>':'')+'</div>';
   }).join('');
   var per=V.constants.coinsPerPoint, c=me.inv.coins;
   var gap=showNeeds&&needs?KEYS.filter(function(k){return me.inv[k]<(needs[k]||0);}).map(function(k){return ((needs[k]||0)-me.inv[k])+' '+LABEL[k];}):[];
-  return '<div class="card"><div class="row spread"><h3>Your goods</h3>'+(gap.length?'<span class="tag bad">Still need: '+esc(gap.join(', '))+'</span>':(showNeeds?'<span class="tag done">Needs covered</span>':''))+'</div><div class="chips">'+chips+'</div>'+
+  return '<div class="card"><div class="row spread"><h3>Your goods</h3>'+(gap.length?'<span class="tag bad">Still need: '+esc(gap.join(', '))+'</span>':(showNeeds?'<span class="tag done">Needs covered</span>':''))+'</div><div class="inv">'+chips+'</div>'+
     '<div class="muted">🪙 <b>'+per+' coins = 1 point</b> at the end. You have '+c+' coins, worth '+Math.floor(c/per)+' point'+(Math.floor(c/per)===1?'':'s')+' right now. Coins also pay the tax.</div></div>';
 }
 function offersHTML(){
@@ -242,9 +246,9 @@ function projectsHTML(){
 }
 function boardHTML(){
   if(V.over||!V.board.length) return '';
-  return '<div class="card"><h3>Deals this round</h3>'+V.board.map(function(t){
-    return '<div class="deal"><span class="dot" style="background:'+esc(t.aColor)+'"></span><b>'+esc(t.a)+'</b> gave '+items(t.aItems)+' to <span class="dot" style="background:'+esc(t.bColor)+'"></span><b>'+esc(t.b)+'</b> for '+items(t.bItems)+'</div>';
-  }).join('')+'</div>';
+  return '<div class="card tboard"><h3>Deals this round <span class="count">'+V.board.length+'</span></h3><ul class="board-list">'+V.board.map(function(t,i){
+    return '<li class="deal-card'+(i===0?' newest':'')+'"><div class="dc-isl"><span class="dot" style="--c:'+esc(t.aColor)+'"></span> '+esc(t.a)+' <span aria-hidden="true">&#8644;</span> <span class="dot" style="--c:'+esc(t.bColor)+'"></span> '+esc(t.b)+'</div><div class="dc-items">'+items(t.aItems)+' <span aria-hidden="true">&#8594;</span> '+esc(t.b)+' &nbsp;|&nbsp; '+items(t.bItems)+' <span aria-hidden="true">&#8594;</span> '+esc(t.a)+'</div></li>';
+  }).join('')+'</ul></div>';
 }
 function overHTML(){
   if(!V.over||!V.scores) return '';

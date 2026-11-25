@@ -4,53 +4,48 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Castaway Economy: teacher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme.css">
 <script src="/qrcode.js"></script>
 <style>
-:root{--bg:#0b1f2a;--surface:#12303f;--surface2:#1b4659;--line:#2c6179;--text:#f3f7f9;--muted:#a9c3cf;--good:#7ee0a0;--bad:#ff9b8a;--warn:#ffd166;--accent:#4fc3f7;color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:17px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-header{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:2px solid var(--line);flex-wrap:wrap}
-h1{margin:0;font-size:1.8rem} h2{margin:0;font-size:1.2rem} h3{margin:0;font-size:1.05rem}
-.code{font-size:2.4rem;font-weight:900;letter-spacing:.2em;background:var(--surface);border-radius:12px;padding:2px 16px}
-.stepper{display:flex;gap:8px;list-style:none;margin:0;padding:0}
-.stepper li{padding:8px 14px;border-radius:10px;background:var(--surface);font-weight:700;color:var(--muted)}
-.stepper li.on{background:var(--accent);color:#06222e}
-.round{font-size:1.6rem;font-weight:800}
-main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(330px,1fr);gap:16px;padding:16px 20px;align-items:start}
-@media(max-width:1000px){main{grid-template-columns:1fr}}
-.panel{background:var(--surface);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
-.islands{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.isle{background:var(--surface);border-radius:14px;border-top:8px solid var(--c);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.isle .nm{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.isle .nm b{font-size:1.3rem}
-.isle .pt{font-size:1.9rem;font-weight:900}
-.isle .pt small{font-size:.75rem;font-weight:700;color:var(--muted)}
-.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.chip{background:var(--bg);border-radius:10px;text-align:center;padding:6px 2px}
-.chip b{display:block;font-size:1.5rem;line-height:1.1}
-.chip span{font-size:.72rem;color:var(--muted)}
-.chip.short{outline:2px solid var(--bad)}
-.muted{color:var(--muted);font-size:.9rem}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.spread{justify-content:space-between}
-button{font:inherit;background:var(--accent);color:#06222e;border:0;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer;min-height:44px}
-button.big{font-size:1.3rem;padding:14px 22px}
-button.sec{background:var(--surface2);color:var(--text)}
-button.small{min-height:34px;padding:5px 10px;font-size:.9rem}
-button:disabled{opacity:.4;cursor:default}
-.timer{font-size:5rem;font-weight:900;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
-.timer.low{color:var(--bad)} .timer.locked{color:var(--bad);font-size:2.8rem}
-.tag{font-size:.78rem;font-weight:800;border-radius:6px;padding:2px 7px;background:var(--surface2)}
-.tag.good{background:#173d2a;color:var(--good)} .tag.bad{background:#4d2520;color:var(--bad)}
-.deal{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:1.15rem;border-left:5px solid var(--line)}
-.deal.new{border-left-color:var(--good)}
-.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px}
-.ev h2{font-size:1.5rem}
-.qr img{background:#fff;padding:8px;border-radius:10px;display:block}
-.join{display:flex;gap:14px;align-items:center}
+/* Layout follows the original projector page: header + round stepper + standings strip; island cards left, phase panels right. */
+#app{max-width:1500px;margin:0 auto;padding:16px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.top h1{font-size:1.7rem;font-weight:800;letter-spacing:-.01em}
+.stepper{display:flex;gap:6px;list-style:none;margin:0;padding:0;flex:1;min-width:280px}
+.stepper li{flex:1;padding:6px 10px;border-radius:8px;background:var(--surface);color:var(--muted);font-weight:700;font-size:.9rem;border-bottom:3px solid transparent;white-space:nowrap}
+.stepper li.done{color:var(--text)}
+.stepper li.now{background:var(--surface-2);color:var(--text);border-bottom-color:var(--sun)}
+.roundtag{font-family:var(--display);font-weight:800;font-size:1.3rem}
+.joinbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:var(--surface);border-radius:16px;padding:12px 16px;margin-top:12px}
+.joinbar .qr img{background:#fff;padding:8px;border-radius:10px;display:block;image-rendering:pixelated}
+.joinbar .code{font-family:var(--display);font-size:2.6rem;font-weight:800;letter-spacing:.12em;color:var(--sun);line-height:1}
+.joinbar .url{font-size:1.05rem}
+.joinbar .joined{margin-left:auto;font-weight:700}
+.standings{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:12px 0;padding:0}
+.standings li{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:999px;padding:5px 14px 5px 10px;font-weight:700}
+.standings .rk{color:var(--muted);font-size:.85rem}
+.standings b{font-family:var(--display);font-size:1.1rem}
+.board{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,1fr);gap:16px;align-items:start}
+@media (max-width:960px){.board{grid-template-columns:1fr}}
+.islands{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.isle{background:var(--surface);border-radius:16px;border-top:6px solid var(--c);padding:14px;display:flex;flex-direction:column;gap:10px}
+.isle header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.isle h3{font-size:1.25rem;font-weight:800}
+.pts{color:var(--muted);font-size:.9rem;white-space:nowrap}
+.pts b{font-family:var(--display);font-size:1.7rem;color:var(--text)}
+.isle .team{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.side{display:flex;flex-direction:column;gap:14px;position:sticky;top:12px}
+@media (max-width:960px){.side{position:static}}
+.actionrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.actionrow{flex-direction:column;align-items:stretch}
+.actionrow .btn.primary{font-size:1.05rem}
 .err{color:var(--bad);font-weight:700}
-.badge{background:var(--bg);border-radius:6px;padding:2px 7px;font-size:.8rem}
-table{width:100%;border-collapse:collapse} td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left} .n{text-align:right}
+.timer.locked{color:var(--coral);font-size:2.8rem}
+.endgrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:960px){.endgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -62,6 +57,7 @@ var ICON={food:'🐟',water:'💧',wood:'🪵',stone:'🪨',coins:'🪙'};
 var LABEL={food:'Food',water:'Water',wood:'Wood',stone:'Stone',coins:'Coins'};
 var KEYS=['food','water','wood','stone','coins'];
 var PHASES=['Event','Production','Market','Settle up'];
+var PNAME={boat:'Fishing boat',well:'Well',hut:'Sturdy hut',lighthouse:'Lighthouse'};
 var params=new URLSearchParams(location.search), code=(params.get('c')||'').toUpperCase();
 var app=document.getElementById('app'), V=null, offset=0, err='', cache='', lanBase=null;
 var isLocal=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
@@ -87,42 +83,80 @@ function primary(){
   return {label:v.round>=v.rounds?'Finish the game':'Next round',a:'advance'};
 }
 function islandHTML(f,k){
-  var needs=V.needs||{}, showNeeds=!V.over&&!(V.phase===3&&V.settled)&&V.event;
-  var chips=KEYS.map(function(r){ var short=showNeeds&&f.inv[r]<(needs[r]||0); return '<div class="chip'+(short?' short':'')+'"><b>'+f.inv[r]+'</b><span>'+ICON[r]+' '+LABEL[r]+'</span></div>'; }).join('');
+  var needs=V.needs||{}, showNeeds=!V.over&&V.phase>=1&&!(V.phase===3&&V.settled);
+  var inv=KEYS.map(function(r){ var short=showNeeds&&f.inv[r]<(needs[r]||0); return '<div class="inv-i '+r+(short?' short':'')+'"><span class="ic">'+ICON[r]+'</span><b class="num">'+f.inv[r]+'</b><small>'+LABEL[r]+'</small></div>'; }).join('');
   var made=KEYS.filter(function(r){return f.prod[r]>0;}).map(function(r){return f.prod[r]+ICON[r];}).join(' ');
-  var built=Object.keys(f.built||{}).filter(function(p){return f.built[p];}).map(function(p){return '<span class="badge">'+esc(p)+'</span>';}).join(' ')+(f.feasts?'<span class="badge">feasts x'+f.feasts+'</span>':'');
-  var last='';
-  if(f.last){ var miss=Object.keys(f.last.short||{}).map(function(r){return f.last.short[r]+ICON[r];}).join(' '); last=f.last.delta>0?'<span class="tag good">Needs paid +'+f.last.delta+'</span>':'<span class="tag bad">Went without '+miss+' '+f.last.delta+'</span>'; }
+  var badges=Object.keys(f.built||{}).filter(function(p){return f.built[p];}).map(function(p){return '<span class="badge">'+esc(PNAME[p]||p)+'</span>';});
+  if(f.feasts) badges.push('<span class="badge">Feast &times;'+f.feasts+'</span>');
+  var status='';
+  if(showNeeds){
+    var miss=KEYS.filter(function(r){return f.inv[r]<(needs[r]||0);}).map(function(r){return ((needs[r]||0)-f.inv[r])+ICON[r];});
+    status=miss.length?'<div class="status bad">Still short: '+miss.join(' ')+'</div>':'<div class="status ok">All needs covered</div>';
+  }
+  if(V.phase===3&&V.settled&&f.last){
+    var ks=Object.keys(f.last.short||{});
+    status=ks.length?'<div class="status bad">Went without '+ks.map(function(r){return f.last.short[r]+ICON[r];}).join(' ')+' &middot; '+f.last.delta+' pts</div>':'<div class="status ok">All needs met &middot; +'+f.last.delta+' pts</div>';
+  }
   var cl=V.islands[k].claimed;
-  return '<article class="isle" style="--c:'+esc(f.color)+'"><div class="nm"><div><b>'+esc(f.name)+'</b><div class="muted">Makes '+made+'</div></div><div class="pt">'+f.pts+'<small> pts</small></div></div><div class="chips">'+chips+'</div><div class="row spread"><span>'+(cl?'<span class="tag good">team joined</span>':'<span class="tag">waiting for a team</span>')+' '+last+'</span>'+(cl?'<button class="small sec" data-rel="'+k+'">Release</button>':'')+'</div>'+(built?'<div>'+built+'</div>':'')+'</article>';
+  return '<article class="isle" style="--c:'+esc(f.color)+'"><header><h3>'+esc(f.name)+'</h3><div class="pts"><b class="num">'+f.pts+'</b> pts</div></header>'+
+    '<div class="inv">'+inv+'</div>'+
+    '<div class="line">Makes each round: '+made+'</div>'+status+
+    (badges.length?'<div class="badges">'+badges.join('')+'</div>':'')+
+    '<div class="team">'+(cl?'<span class="badge ok">Team joined</span><button class="btn small" data-rel="'+k+'">Release</button>':'<span class="badge">Waiting for a team</span>')+'</div></article>';
 }
+function standingsHTML(v){
+  var order=v.islands.slice().sort(function(a,b){return b.pts-a.pts;});
+  return '<ol class="standings" aria-label="Standings">'+order.map(function(i,k){return '<li><span class="dot" style="--c:'+esc(i.color)+'"></span><span class="rk">'+(k+1)+'</span>'+esc(i.name)+' <b class="num">'+i.pts+'</b></li>';}).join('')+'</ol>';
+}
+function timerClass(l){ return 'timer'+(V.locked?' locked':(l<=30&&V.timer.running?' low':'')); }
 function render(force){
   if(!V) return;
   var v=V, pr=primary();
   var base=lanBase||location.origin, joinUrl=base+v.joinPath, qr='';
-  try{ var q=qrcode(0,'M'); q.addData(joinUrl); q.make(); qr=q.createImgTag(5,0); }catch(e){}
-  var timerBlock='';
-  if(v.phase===2){
-    var l=timerLeft();
-    timerBlock='<div class="panel"><div class="timer'+(v.locked?' locked':(l<=30&&v.timer.running?' low':''))+'" id="timer">'+(v.locked?'Market closed':mmss(l))+'</div><div class="row" style="justify-content:center"><button data-t="'+(v.timer.running?'pause':'start')+'">'+(v.timer.running?'Pause':(v.locked?'Restart (+30s)':'Start timer'))+'</button><button class="sec" data-t="add" data-s="-30">−30s</button><button class="sec" data-t="add" data-s="30">+30s</button><button class="sec" data-t="reset">Reset</button></div><div class="muted" style="text-align:center">When the timer hits zero the market locks and offers can no longer be accepted. '+v.pending+' offer'+(v.pending===1?'':'s')+' waiting.</div></div>';
+  try{ var q=qrcode(0,'M'); q.addData(joinUrl); q.make(); qr=q.createImgTag(4,0); }catch(e){}
+  var joined=v.islands.filter(function(i){return i.claimed;}).length;
+  var action='<div class="actionrow">'+(pr?'<button class="btn primary big" data-p="'+pr.a+'">'+pr.label+' &rarr;</button>':'')+(err?'<span class="err" role="alert">'+esc(err)+'</span>':'')+'</div>';
+  var panels='';
+  if(v.event&&!v.over){
+    panels+='<section class="panel ev"><h2>Round '+v.round+': what happened?</h2><div class="evcard"><span class="term">'+esc(v.event.term)+'</span><h3>'+esc(v.event.title)+'</h3><p>'+esc(v.event.text)+'</p></div>'+
+      '<div class="ask"><b>Ask the class</b>'+esc(v.event.ask)+'</div>'+
+      (v.event.notes.length?'<ul class="notes">'+v.event.notes.map(function(n){return '<li>'+esc(n)+'</li>';}).join('')+'</ul>':'')+action+'</section>';
+  } else if(!v.over){
+    panels+='<section class="panel"><h2>Round '+v.round+': what happened?</h2><p class="muted">Ask the class what could go wrong or right this round, then draw the card.</p>'+action+'</section>';
   }
-  var ev='';
-  if(v.event&&!v.over) ev='<div class="panel ev"><div class="row spread"><h2>'+esc(v.event.title)+'</h2><span class="tag">'+esc(v.event.term)+'</span></div><div>'+esc(v.event.text)+'</div>'+(v.event.notes.length?'<div class="muted">'+v.event.notes.map(esc).join('<br>')+'</div>':'')+'<div class="muted"><i>Ask the class: '+esc(v.event.ask)+'</i></div></div>';
-  else if(!v.over) ev='<div class="panel"><h2>Round '+v.round+'</h2><div class="muted">Reveal the event card to begin.</div></div>';
-  var board='<div class="panel"><div class="row spread"><h2>Trade board</h2>'+(v.undoable?'<button class="small sec" data-undo="1">Undo last</button>':'')+'</div>'+(v.board.length?v.board.map(function(t,i){return '<div class="deal'+(i===0?' new':'')+'"><span class="dot" style="background:'+esc(t.aColor)+'"></span><b>'+esc(t.a)+'</b> ⇄ <span class="dot" style="background:'+esc(t.bColor)+'"></span><b>'+esc(t.b)+'</b><div class="muted">'+items(t.aItems)+' → '+esc(t.b)+' &nbsp;|&nbsp; '+items(t.bItems)+' → '+esc(t.a)+'</div></div>';}).join(''):'<div class="muted">No trades yet this round.</div>')+'</div>';
-  var buys=v.buys.length?'<div class="panel"><h2>Purchases</h2>'+v.buys.map(function(b){return '<div class="deal"><span class="dot" style="background:'+esc(b.color)+'"></span><b>'+esc(b.island)+'</b> bought the '+esc(b.project)+'</div>';}).join('')+'</div>':'';
-  var over='';
-  if(v.over&&v.scores) over='<div class="panel"><h2>Final scores</h2><table><tr><th>Island</th><th class="n">Points</th><th class="n">Coin bonus</th><th class="n">Total</th></tr>'+v.scores.map(function(s,i){return '<tr><td>'+(i===0?'🏆 ':'')+esc(s.name)+'</td><td class="n">'+s.pts+'</td><td class="n">+'+s.bonus+'</td><td class="n"><b>'+s.total+'</b></td></tr>';}).join('')+'</table></div>';
-  var html='<header><div class="join"><div class="qr">'+qr+'</div><div><div class="muted">Students go to <b>'+esc(base.replace(/^https?:\/\//,''))+'/play</b> and enter</div><div class="code">'+esc(v.code)+'</div></div></div>'+
-    '<ol class="stepper">'+PHASES.map(function(p,i){return '<li class="'+(i===v.phase&&!v.over?'on':'')+'">'+(i+1)+' '+p+'</li>';}).join('')+'</ol><div class="round">'+(v.over?'Game over':'Round '+v.round+' of '+v.rounds)+'</div></header>'+
-    '<main><section><div class="row" style="margin-bottom:12px">'+(pr?'<button class="big" data-p="'+pr.a+'">'+pr.label+' →</button>':'')+(err?'<span class="err">'+esc(err)+'</span>':'')+'<span class="muted">'+v.islands.filter(function(i){return i.claimed;}).length+' of '+v.islands.length+' teams joined</span></div><div class="islands">'+v.full.map(islandHTML).join('')+'</div></section>'+
-    '<aside style="display:flex;flex-direction:column;gap:12px">'+ev+timerBlock+board+buys+over+'</aside></main>';
+  if(v.phase===2&&!v.over){
+    var l=timerLeft();
+    panels+='<section class="panel"><h2>The market is open</h2><div class="'+timerClass(l)+'" id="timer" role="timer" aria-live="off">'+(v.locked?'Market closed':mmss(l))+'</div>'+
+      '<div class="trow"><button class="btn" data-t="'+(v.timer.running?'pause':'start')+'">'+(v.timer.running?'Pause':(v.locked?'Restart (+30s)':'Start timer'))+'</button><button class="btn small" data-t="add" data-s="-30">&minus;30s</button><button class="btn small" data-t="add" data-s="30">+30s</button><button class="btn small" data-t="reset">Reset</button></div>'+
+      '<p class="muted" style="text-align:center;font-size:.9rem">When the timer hits zero the market locks and offers can no longer be accepted. '+v.pending+' offer'+(v.pending===1?'':'s')+' waiting.</p></section>';
+  }
+  if(!v.over&&(v.phase>=2||v.board.length)){
+    var cards=v.board.length?v.board.map(function(t,i){return '<li class="deal-card'+(i===0?' newest':'')+'"><div class="dc-isl"><span class="dot" style="--c:'+esc(t.aColor)+'"></span> '+esc(t.a)+' <span aria-hidden="true">&#8644;</span> <span class="dot" style="--c:'+esc(t.bColor)+'"></span> '+esc(t.b)+'</div><div class="dc-items">'+items(t.aItems)+' <span aria-hidden="true">&#8594;</span> '+esc(t.b)+' &nbsp;|&nbsp; '+items(t.bItems)+' <span aria-hidden="true">&#8594;</span> '+esc(t.a)+'</div>'+(i===0&&v.undoable?'<button class="btn small" data-undo="1">Undo</button>':'')+'</li>';}).join(''):'<li class="muted board-empty">No trades yet. Teams send offers from their phones.</li>';
+    panels+='<section class="panel tboard"><h3>Trade board <span class="count">'+v.board.length+' deal'+(v.board.length===1?'':'s')+' this round</span></h3><ul class="board-list">'+cards+'</ul>'+(v.locked&&v.phase===2?'<p class="locked-note">&#128274; The timer has run out. New trades are not accepted.</p>':'')+'</section>';
+  }
+  if(!v.over&&v.phase===3&&v.settled){
+    var bc=v.buys.length?v.buys.map(function(b,i){return '<li class="deal-card'+(i===0?' newest':'')+'"><div class="dc-isl"><span class="dot" style="--c:'+esc(b.color)+'"></span> '+esc(b.island)+'</div><div class="dc-items">bought the <b>'+esc(b.project)+'</b></div></li>';}).join(''):'<li class="muted board-empty">No purchases yet. Teams buy from their phones.</li>';
+    panels+='<section class="panel tboard"><h3>Purchases <span class="count">'+v.buys.length+' this round</span></h3><ul class="board-list">'+bc+'</ul></section>';
+  }
+  var body;
+  if(v.over&&v.scores){
+    var w=v.scores[0], tie=v.scores[1]&&v.scores[1].total===w.total&&v.scores[1].coins===w.coins;
+    var rows=v.scores.map(function(s,i){return '<tr><td>'+(i+1)+'. <span style="color:'+esc(s.color)+'">&#9679;</span> '+esc(s.name)+'</td><td class="num">'+s.pts+'</td><td class="num">'+s.coins+' &rarr; +'+s.bonus+'</td><td class="num"><b>'+s.total+'</b></td></tr>';}).join('');
+    body='<div style="display:flex;flex-direction:column;gap:16px;margin-top:16px"><div><p class="muted" style="margin:0 0 4px">Final scores after '+v.rounds+' rounds</p><div class="winner">'+(tie?'It is a tie at the top: <span>'+v.scores.filter(function(s){return s.total===w.total&&s.coins===w.coins;}).map(function(s){return esc(s.name);}).join(' and ')+'</span>':'<span>'+esc(w.name)+'</span> wins with '+w.total+' points')+'</div></div>'+
+      '<section class="panel"><h2>Final scores</h2><div class="tablewrap"><table><tr><th scope="col">Island</th><th scope="col">Points</th><th scope="col">Coins to bonus</th><th scope="col">Total</th></tr>'+rows+'</table></div><p class="muted" style="font-size:.85rem">Every '+v.constants.coinsPerPoint+' coins left over is worth 1 bonus point.</p></section>'+
+      '<section class="islands" aria-label="Islands">'+v.full.map(islandHTML).join('')+'</section></div>';
+  } else {
+    body=standingsHTML(v)+'<main class="board"><section class="islands" aria-label="Islands">'+v.full.map(islandHTML).join('')+'</section><aside class="side">'+panels+'</aside></main>';
+  }
+  var steps=PHASES.map(function(p,i){var cls=v.over||i<v.phase?'done':i===v.phase?'now':''; return '<li class="'+cls+'"'+(i===v.phase&&!v.over?' aria-current="step"':'')+'>'+(i+1)+' '+p+'</li>';}).join('');
+  var html='<header class="top"><h1>Castaway Economy</h1><ol class="stepper">'+steps+'</ol><div class="roundtag">'+(v.over?'Game over':'Round '+v.round+' of '+v.rounds)+'</div></header>'+
+    '<div class="joinbar"><div class="qr">'+qr+'</div><div><div class="muted">Students go to <b class="url">'+esc(base.replace(/^https?:\/\//,''))+'/play</b> and enter</div><div class="code">'+esc(v.code)+'</div></div><div class="joined">'+joined+' of '+v.islands.length+' teams joined</div></div>'+body;
   if(force||html!==cache){ app.innerHTML=html; cache=html; }
   tick();
 }
 function tick(){
   var el=document.getElementById('timer'); if(!el||!V||V.phase!==2) return;
-  var l=timerLeft(); el.textContent=V.locked?'Market closed':mmss(l); el.className='timer'+(V.locked?' locked':(l<=30&&V.timer.running?' low':''));
+  var l=timerLeft(); el.textContent=V.locked?'Market closed':mmss(l); el.className=timerClass(l);
 }
 app.addEventListener('click',function(e){
   var b=e.target.closest('button'); if(!b||b.disabled) return;
@@ -134,7 +168,7 @@ app.addEventListener('click',function(e){
 function connect(){
   var es=new EventSource('/api/g/'+code+'/stream?token='+encodeURIComponent(tok()||''));
   es.onmessage=function(m){ V=JSON.parse(m.data); offset=V.serverNow-Date.now(); render(); };
-  es.onerror=function(){ fetch('/api/g/'+code+'/state?token='+encodeURIComponent(tok()||'')).then(function(r){ if(r.status===401||r.status===404){ es.close(); app.innerHTML='<div style="padding:30px"><h1>Game not found</h1><p>This game code is not on this computer or has ended.</p><p><a style="color:#4fc3f7" href="/">Back to start</a></p></div>'; } }).catch(function(){}); };
+  es.onerror=function(){ fetch('/api/g/'+code+'/state?token='+encodeURIComponent(tok()||'')).then(function(r){ if(r.status===401||r.status===404){ es.close(); app.innerHTML='<div class="panel" style="max-width:560px;margin:40px auto"><h1>Game not found</h1><p>This game code is not on this computer or has ended.</p><p><a href="/">Back to start</a></p></div>'; } }).catch(function(){}); };
 }
 setInterval(tick,250);
 if(!code||!tok()) location.href='/'; else connect();
