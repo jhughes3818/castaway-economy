@@ -6,44 +6,45 @@
 <title>Castaway Economy: teacher</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/theme.css">
 <script src="/qrcode.js"></script>
 <style>
-/* Layout follows the original projector page: header + round stepper + standings strip; island cards left, phase panels right. */
+/* Layout follows the original projector page: sea banner with round stepper, join bar, standings strip; island cards left, phase panels right. */
 #app{max-width:1500px;margin:0 auto;padding:16px}
-.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding-bottom:12px;border-bottom:1px solid var(--line)}
-.top h1{font-size:1.7rem;font-weight:800;letter-spacing:-.01em}
-.stepper{display:flex;gap:6px;list-style:none;margin:0;padding:0;flex:1;min-width:280px}
-.stepper li{flex:1;padding:6px 10px;border-radius:8px;background:var(--surface);color:var(--muted);font-weight:700;font-size:.9rem;border-bottom:3px solid transparent;white-space:nowrap}
-.stepper li.done{color:var(--text)}
-.stepper li.now{background:var(--surface-2);color:var(--text);border-bottom-color:var(--sun)}
-.roundtag{font-family:var(--display);font-weight:800;font-size:1.3rem}
-.joinbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:var(--surface);border-radius:16px;padding:12px 16px;margin-top:12px}
-.joinbar .qr img{background:#fff;padding:8px;border-radius:10px;display:block;image-rendering:pixelated}
-.joinbar .code{font-family:var(--display);font-size:2.6rem;font-weight:800;letter-spacing:.12em;color:var(--sun);line-height:1}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:14px 18px 20px}
+.top h1{font-size:1.9rem;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.2);display:flex;align-items:center;gap:8px}
+.stepper{display:flex;gap:6px;list-style:none;margin:0;padding:0;flex:1;min-width:280px;position:relative;z-index:1}
+.stepper li{flex:1;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.12);color:rgba(233,251,251,.75);font-weight:800;font-size:.92rem;white-space:nowrap;border:2px solid transparent}
+.stepper li.done{color:#fff;background:rgba(255,255,255,.2)}
+.stepper li.now{background:var(--sun);color:var(--sun-ink);border-color:var(--sun-deep);box-shadow:0 3px 0 var(--sun-deep)}
+.roundtag{font-family:var(--display);font-size:1.4rem;color:#fff;background:rgba(0,0,0,.15);border-radius:12px;padding:4px 12px}
+.joinbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:var(--surface);border:2px solid var(--line);box-shadow:0 5px 0 var(--shadow);border-radius:18px;padding:12px 16px;margin-top:16px}
+.joinbar .qr img{background:#fff;padding:8px;border-radius:12px;border:2px solid var(--line);display:block;image-rendering:pixelated}
+.joinbar .code{font-family:var(--display);font-size:3rem;letter-spacing:.14em;color:var(--sea-deep);line-height:1}
 .joinbar .url{font-size:1.05rem}
-.joinbar .joined{margin-left:auto;font-weight:700}
-.standings{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:12px 0;padding:0}
-.standings li{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:999px;padding:5px 14px 5px 10px;font-weight:700}
+.joinbar .joined{margin-left:auto;font-weight:900;background:var(--bg);border-radius:999px;padding:6px 14px}
+.standings{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:16px 0;padding:0}
+.standings li{display:flex;align-items:center;gap:8px;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:4px 14px 4px 8px;font-weight:800}
+.standings li:first-child{border-color:var(--sun-deep);background:#fff1c9}
 .standings .rk{color:var(--muted);font-size:.85rem}
-.standings b{font-family:var(--display);font-size:1.1rem}
+.standings b{font-family:var(--display);font-weight:400;font-size:1.2rem}
 .board{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,1fr);gap:16px;align-items:start}
 @media (max-width:960px){.board{grid-template-columns:1fr}}
-.islands{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
-.isle{background:var(--surface);border-radius:16px;border-top:6px solid var(--c);padding:14px;display:flex;flex-direction:column;gap:10px}
-.isle header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.isle h3{font-size:1.25rem;font-weight:800}
-.pts{color:var(--muted);font-size:.9rem;white-space:nowrap}
-.pts b{font-family:var(--display);font-size:1.7rem;color:var(--text)}
+.islands{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.isle{background:var(--surface);border:2px solid var(--line);box-shadow:0 5px 0 var(--shadow);border-radius:18px;padding:0 14px 14px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+/* coloured flag strip across the top of each island card */
+.isle header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 -14px;padding:10px 14px;background:var(--c);border-bottom:2px solid var(--line)}
+.isle h3{font-size:1.35rem;color:var(--text)}
+.pts{color:var(--text);font-size:.9rem;font-weight:800;white-space:nowrap;background:rgba(255,255,255,.55);border-radius:10px;padding:0 8px}
+.pts b{font-family:var(--display);font-weight:400;font-size:1.6rem}
 .isle .team{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.side{display:flex;flex-direction:column;gap:14px;position:sticky;top:12px}
+.side{display:flex;flex-direction:column;gap:16px;position:sticky;top:12px}
 @media (max-width:960px){.side{position:static}}
-.actionrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.actionrow{flex-direction:column;align-items:stretch}
-.actionrow .btn.primary{font-size:1.05rem}
-.err{color:var(--bad);font-weight:700}
-.timer.locked{color:var(--coral);font-size:2.8rem}
+.actionrow{display:flex;gap:10px;flex-direction:column;align-items:stretch}
+.actionrow .btn.primary{font-size:1.1rem}
+.err{color:var(--bad);font-weight:800}
+.timer.locked{color:var(--bad);font-size:2.8rem}
 .side .tboard .board-list{max-height:45vh;overflow-y:auto}
 .endgrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:960px){.endgrid{grid-template-columns:1fr}}
@@ -153,7 +154,7 @@ function render(force){
     body=standingsHTML(v)+'<main class="board"><section class="islands" aria-label="Islands">'+v.full.map(islandHTML).join('')+'</section><aside class="side">'+panels+'</aside></main>';
   }
   var steps=PHASES.map(function(p,i){var cls=v.over||i<v.phase?'done':i===v.phase?'now':''; return '<li class="'+cls+'"'+(i===v.phase&&!v.over?' aria-current="step"':'')+'>'+(i+1)+' '+p+'</li>';}).join('');
-  var html='<header class="top"><h1>Castaway Economy</h1><ol class="stepper">'+steps+'</ol><div class="roundtag">'+(v.over?'Game over':'Round '+v.round+' of '+v.rounds)+'</div></header>'+
+  var html='<header class="top sea"><h1><span aria-hidden="true">🏝️</span>Castaway Economy</h1><ol class="stepper">'+steps+'</ol><div class="roundtag">'+(v.over?'Game over':'Round '+v.round+' of '+v.rounds)+'</div></header>'+
     '<div class="joinbar"><div class="qr">'+qr+'</div><div><div class="muted">Students go to <b class="url">'+esc(base.replace(/^https?:\/\//,''))+'/play</b> and enter</div><div class="code">'+esc(v.code)+'</div></div><div class="joined">'+joined+' of '+v.islands.length+' teams joined</div></div>'+body;
   if(force||html!==cache){ app.innerHTML=html; cache=html; }
   tick();
