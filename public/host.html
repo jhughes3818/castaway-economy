@@ -44,6 +44,7 @@
 .actionrow .btn.primary{font-size:1.05rem}
 .err{color:var(--bad);font-weight:700}
 .timer.locked{color:var(--coral);font-size:2.8rem}
+.side .tboard .board-list{max-height:45vh;overflow-y:auto}
 .endgrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:960px){.endgrid{grid-template-columns:1fr}}
 </style>
@@ -116,8 +117,10 @@ function render(force){
   try{ var q=qrcode(0,'M'); q.addData(joinUrl); q.make(); qr=q.createImgTag(4,0); }catch(e){}
   var joined=v.islands.filter(function(i){return i.claimed;}).length;
   var action='<div class="actionrow">'+(pr?'<button class="btn primary big" data-p="'+pr.a+'">'+pr.label+' &rarr;</button>':'')+(err?'<span class="err" role="alert">'+esc(err)+'</span>':'')+'</div>';
-  var panels='';
-  if(v.event&&!v.over){
+  var panels='', market='', tradeBoard='';
+  if(v.phase===2&&!v.over){
+    /* market phase: event card is hidden; trade board first, then the timer */
+  } else if(v.event&&!v.over){
     panels+='<section class="panel ev"><h2>Round '+v.round+': what happened?</h2><div class="evcard"><span class="term">'+esc(v.event.term)+'</span><h3>'+esc(v.event.title)+'</h3><p>'+esc(v.event.text)+'</p></div>'+
       '<div class="ask"><b>Ask the class</b>'+esc(v.event.ask)+'</div>'+
       (v.event.notes.length?'<ul class="notes">'+v.event.notes.map(function(n){return '<li>'+esc(n)+'</li>';}).join('')+'</ul>':'')+action+'</section>';
@@ -126,14 +129,15 @@ function render(force){
   }
   if(v.phase===2&&!v.over){
     var l=timerLeft();
-    panels+='<section class="panel"><h2>The market is open</h2><div class="'+timerClass(l)+'" id="timer" role="timer" aria-live="off">'+(v.locked?'Market closed':mmss(l))+'</div>'+
+    market='<section class="panel"><h2>The market is open</h2><div class="'+timerClass(l)+'" id="timer" role="timer" aria-live="off">'+(v.locked?'Market closed':mmss(l))+'</div>'+
       '<div class="trow"><button class="btn" data-t="'+(v.timer.running?'pause':'start')+'">'+(v.timer.running?'Pause':(v.locked?'Restart (+30s)':'Start timer'))+'</button><button class="btn small" data-t="add" data-s="-30">&minus;30s</button><button class="btn small" data-t="add" data-s="30">+30s</button><button class="btn small" data-t="reset">Reset</button></div>'+
-      '<p class="muted" style="text-align:center;font-size:.9rem">When the timer hits zero the market locks and offers can no longer be accepted. '+v.pending+' offer'+(v.pending===1?'':'s')+' waiting.</p></section>';
+      '<p class="muted" style="text-align:center;font-size:.9rem">When the timer hits zero the market locks and offers can no longer be accepted. '+v.pending+' offer'+(v.pending===1?'':'s')+' waiting.</p>'+action+'</section>';
   }
   if(!v.over&&(v.phase>=2||v.board.length)){
     var cards=v.board.length?v.board.map(function(t,i){return '<li class="deal-card'+(i===0?' newest':'')+'"><div class="dc-isl"><span class="dot" style="--c:'+esc(t.aColor)+'"></span> '+esc(t.a)+' <span aria-hidden="true">&#8644;</span> <span class="dot" style="--c:'+esc(t.bColor)+'"></span> '+esc(t.b)+'</div><div class="dc-items">'+items(t.aItems)+' <span aria-hidden="true">&#8594;</span> '+esc(t.b)+' &nbsp;|&nbsp; '+items(t.bItems)+' <span aria-hidden="true">&#8594;</span> '+esc(t.a)+'</div>'+(i===0&&v.undoable?'<button class="btn small" data-undo="1">Undo</button>':'')+'</li>';}).join(''):'<li class="muted board-empty">No trades yet. Teams send offers from their phones.</li>';
-    panels+='<section class="panel tboard"><h3>Trade board <span class="count">'+v.board.length+' deal'+(v.board.length===1?'':'s')+' this round</span></h3><ul class="board-list">'+cards+'</ul>'+(v.locked&&v.phase===2?'<p class="locked-note">&#128274; The timer has run out. New trades are not accepted.</p>':'')+'</section>';
+    tradeBoard='<section class="panel tboard"><h3>Trade board <span class="count">'+v.board.length+' deal'+(v.board.length===1?'':'s')+' this round</span></h3><ul class="board-list">'+cards+'</ul>'+(v.locked&&v.phase===2?'<p class="locked-note">&#128274; The timer has run out. New trades are not accepted.</p>':'')+'</section>';
   }
+  panels+=tradeBoard+market;
   if(!v.over&&v.phase===3&&v.settled){
     var bc=v.buys.length?v.buys.map(function(b,i){return '<li class="deal-card'+(i===0?' newest':'')+'"><div class="dc-isl"><span class="dot" style="--c:'+esc(b.color)+'"></span> '+esc(b.island)+'</div><div class="dc-items">bought the <b>'+esc(b.project)+'</b></div></li>';}).join(''):'<li class="muted board-empty">No purchases yet. Teams buy from their phones.</li>';
     panels+='<section class="panel tboard"><h3>Purchases <span class="count">'+v.buys.length+' this round</span></h3><ul class="board-list">'+bc+'</ul></section>';
