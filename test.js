@@ -109,6 +109,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const ng=games[code].st; t('new game state',!ng.over&&ng.round===1&&ng.phase===0&&ng.rounds===4&&ng.islands.every(i=>i.pts===0)&&games[code].offers.length===0);
   t('teams kept after restart',!!games[code].teams[0]&&(await P(0,'offer',{to:1,give:[{r:'food',q:1}],get:[{r:'wood',q:1}]})).status===400);
   await sleep(150); t('SSE pushes restart',stu.last().over===false&&stu.last().round===1&&!stu.last().scores);
-  t('restart blocked mid-game',(await T('restart')).status===400);
+  await T('reveal');
+  t('restart mid-game',(await T('restart')).status===200&&games[code].st.round===1&&games[code].st.phase===0&&!games[code].st.eventRevealed);
   console.log(ok,'checks passed'); stu.close(); tea.close(); server.close(); process.exit(process.exitCode||0);
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -185,7 +185,7 @@ function teacherAction(g, action, body) {
   switch (action) {
     case 'restart': {
       // Same code, same rounds and timer, teams stay joined, so phones move straight to round 1.
-      if (!st.over) bad('Finish the game before starting a new one.');
+      // Allowed at any point, including mid-round.
       stopTimer(g);
       g.st = L.newState(st.islands.length, st.rounds, null);
       g.offers = [];
