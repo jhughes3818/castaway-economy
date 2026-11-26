@@ -20,6 +20,7 @@
 .panel h2{display:flex;align-items:center;gap:8px}
 .panel h2 .ic{font-size:1.5rem}
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opts .wide{grid-column:1/-1}
 .panel .btn.primary{align-self:stretch}
 .err{color:var(--bad);font-weight:800}
 .err:empty{display:none}
@@ -55,12 +56,13 @@
 <div class="who"><section class="panel"><h2><span class="ic" aria-hidden="true">🧭</span>I am a student</h2><p class="muted">Enter the code your teacher is showing.</p>
 <input class="codein" id="jc" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" aria-label="Game code" placeholder="CODE"><button class="btn primary" id="join">Join</button></section>
 <section class="panel"><h2><span class="ic" aria-hidden="true">🗺️</span>I am a teacher</h2>
-<div class="opts"><div class="field"><label for="rounds">Rounds</label><select id="rounds"><option>4</option><option>5</option><option selected>6</option><option>7</option></select></div>
+<div class="opts"><div class="field wide"><label for="level">Year level</label><select id="level"></select></div>
+<div class="field"><label for="rounds">Rounds</label><select id="rounds"><option>4</option><option>5</option><option selected>6</option><option>7</option></select></div>
 <div class="field"><label for="tlen">Market timer (seconds)</label><input id="tlen" type="number" min="30" max="900" step="15" value="240"></div></div>
 <button class="btn primary" id="create">Create a game</button><div class="err" id="err" role="alert"></div>
 <a class="guide" href="/teacher-guide.pdf" target="_blank" rel="noopener"><span aria-hidden="true">📘</span>Teacher guide: how to run the lesson (PDF)</a></section></div>
 <section class="panel how"><h2><span aria-hidden="true">🏝️</span>How the game works</h2>
-<p>Six island teams trade to survive over about six rounds. Each round:</p>
+<p>Six island teams trade to survive over four to six rounds. Each round:</p>
 <ol>
 <li><b>Event:</b> something happens (a storm, a drought, a bumper harvest, a pirate raid) that changes what goods are worth.</li>
 <li><b>Production:</b> your island makes its goods. You will have lots of some things and none of others.</li>
@@ -74,11 +76,18 @@
 <script>
 (function(){
 var $=function(i){return document.getElementById(i);};
+/* Year level -> scale. Picking a level pre-fills the timer and rounds; both stay editable.
+   Keep in step with YEAR_LEVELS in logic.js (the server only accepts scale 1, 2 or 3). */
+var LEVELS=[{scale:1,label:'Years 4 to 6',timer:300,rounds:4},{scale:2,label:'Years 7 to 8',timer:240,rounds:6},{scale:3,label:'Years 9 to 12',timer:180,rounds:6}];
+var DEFAULT_SCALE=1;
+$('level').innerHTML=LEVELS.map(function(l){return '<option value="'+l.scale+'"'+(l.scale===DEFAULT_SCALE?' selected':'')+'>'+l.label+'</option>';}).join('');
+function fillLevel(){ var l=LEVELS.filter(function(x){return x.scale===+$('level').value;})[0]; if(!l) return; $('tlen').value=l.timer; $('rounds').value=String(l.rounds); }
+$('level').onchange=fillLevel; fillLevel();
 function go(){ var c=$('jc').value.toUpperCase().replace(/[^A-Z]/g,''); if(c.length===4) location.href='/play?c='+c; }
 $('join').onclick=go; $('jc').onkeydown=function(e){ if(e.key==='Enter') go(); };
 $('create').onclick=function(){
   $('create').disabled=true; $('err').textContent='';
-  fetch('/api/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rounds:+$('rounds').value,timerLen:+$('tlen').value})})
+  fetch('/api/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rounds:+$('rounds').value,timerLen:+$('tlen').value,scale:+$('level').value})})
    .then(function(r){return r.json();}).then(function(j){
      if(!j.code) throw new Error(j.error||'Could not create the game');
      try{ localStorage.setItem('castaway-host-'+j.code,j.teacherToken); }catch(e){ throw new Error('This browser is blocking site storage (private mode?). Use a normal window to run the game.'); }

@@ -122,9 +122,12 @@ function createGame(opts) {
   const n = 6; // balance is only validated for 6 islands
   const rounds = Math.max(3, Math.min(8, +opts.rounds || 6));
   const len = Math.max(30, Math.min(900, +opts.timerLen || 240));
+  // Scale is fixed for the life of the game (restart keeps it). Missing means the default; anything else but 1, 2 or 3 is refused.
+  const scale = opts.scale === undefined || opts.scale === null ? L.DEFAULT_SCALE : opts.scale;
+  if (!L.isScale(scale)) bad('Year level must be scale 1, 2 or 3.');
   if (Object.keys(games).length >= MAX_GAMES) bad('This server is full. Try again later.', 503);
   const code = newCode();
-  const g = { code, tt: token(), st: L.newState(n, rounds, null), teams: {}, offers: [], nextOffer: 1,
+  const g = { code, tt: token(), st: L.newState(n, rounds, null, null, scale), teams: {}, offers: [], nextOffer: 1,
     timer: { len, left: len, running: false, endsAt: null, tid: null }, clients: new Set(), created: now(), touched: now() };
   games[code] = g;
   save();
@@ -135,7 +138,7 @@ function createGame(opts) {
 function eventView(st) {
   if (!st.eventRevealed) return null;
   const ev = L.curEvent(st);
-  return { id: ev.id, title: ev.title, text: ev.text, term: ev.term, ask: ev.ask, notes: st.eventNotes || [] };
+  return { id: ev.id, title: ev.title, text: L.eventText(ev, L.scaleOf(st)), term: ev.term, ask: ev.ask, notes: st.eventNotes || [] };
 }
 function offerView(g, o) {
   const st = g.st;
@@ -149,21 +152,24 @@ function boardView(g) {
   });
 }
 function common(g) {
-  const st = g.st, ev = L.curEvent(st);
+  const st = g.st, ev = L.curEvent(st), S = L.scaleOf(st), R = L.rules(S);
   return {
     code: g.code, serverNow: now(), phase: st.phase, round: st.round, rounds: st.rounds, over: st.over, settled: st.settled, locked: !!st.locked,
     event: st.over ? null : eventView(st),
-    needs: st.over ? null : L.needsFor(st.eventRevealed ? ev : null),
+    needs: st.over ? null : L.needsFor(st.eventRevealed ? ev : null, S),
     timer: { left: timerLeft(g), running: g.timer.running, endsAt: g.timer.endsAt, len: g.timer.len },
     islands: st.islands.map((i, k) => ({ idx: k, name: i.name, color: i.color, pts: i.pts, claimed: !!g.teams[k] })),
     board: boardView(g),
     scores: st.over ? L.finalScores(st) : null,
-    constants: { coinsPerPoint: L.SCORE.coinsPerPoint, allMet: L.SCORE.allMet, missing: L.SCORE.missing, baseNeeds: L.BASE_NEEDS, startCoins: L.START_COINS }
+    scale: S, level: R.level ? R.level.label : '',
+    maxQty: maxQty(S),
+    constants: { coinsPerPoint: R.score.coinsPerPoint, allMet: R.score.allMet, missing: R.score.missing, baseNeeds: R.needs, startCoins: R.startCoins }
   };
 }
 function projectsView(st, isl) {
-  return Object.keys(L.PROJECTS).map((pid) => {
-    const p = L.PROJECTS[pid];
+  const P = L.rules(L.scaleOf(st)).projects;
+  return Object.keys(P).map((pid) => {
+    const p = P[pid];
     return { id: pid, name: p.name, cost: p.cost, pts: p.pts, blurb: p.blurb, once: !!p.once, owned: !!(p.once && isl.built[pid]), canBuy: L.canBuild(st, isl, pid) };
   });
 }
@@ -219,7 +225,7 @@ function teacherAction(g, action, body) {
       // Same code, same rounds and timer, teams stay joined, so phones move straight to round 1.
       // Allowed at any point, including mid-round.
       stopTimer(g);
-      g.st = L.newState(st.islands.length, st.rounds, null);
+      g.st = L.newState(st.islands.length, st.rounds, null, null, L.scaleOf(st));
       g.offers = [];
       g.timer.left = g.timer.len;
       break;
@@ -278,13 +284,15 @@ function teacherAction(g, action, body) {
 }
 
 /* ---------- team actions ---------- */
-function cleanItems(items) {
+/** Largest amount of one good in a single offer (99 at scale 1, grows with the scale). */
+function maxQty(S) { return 99 * S; }
+function cleanItems(items, max) {
   if (!Array.isArray(items) || !items.length || items.length > 2) return null;
   const out = [];
   for (const x of items) {
     if (!x || RESK.indexOf(x.r) < 0) return null;
     const q = Number(x.q);
-    if (!Number.isInteger(q) || q < 1 || q > 99) return null;
+    if (!Number.isInteger(q) || q < 1 || q > max) return null;
     out.push({ r: x.r, q });
   }
   if (out.length === 2 && out[0].r === out[1].r) return null;
@@ -303,7 +311,7 @@ function teamAction(g, idx, action, body) {
     const to = Number(body.to);
     if (!Number.isInteger(to) || to < 0 || to >= st.islands.length || to === idx) bad('Pick another island.');
     if (!g.teams[to]) bad('No team is playing ' + st.islands[to].name + ' yet.');
-    const give = cleanItems(body.give), get = cleanItems(body.get);
+    const mq = maxQty(L.scaleOf(st)), give = cleanItems(body.give, mq), get = cleanItems(body.get, mq);
     if (!give || !get) bad('Each side needs 1 or 2 different items, in whole numbers.');
     if (get.some((h) => give.some((x) => x.r === h.r))) bad('Both sides cannot give the same thing.');
     for (const x of give) if (me.inv[x.r] < x.q) bad('You only have ' + me.inv[x.r] + ' ' + L.LABEL[x.r] + '.');
@@ -332,7 +340,7 @@ function teamAction(g, idx, action, body) {
   }
   if (action === 'buy') {
     if (st.phase !== 3 || !st.settled) bad('Buying opens after needs are paid.');
-    const p = L.PROJECTS[body.project];
+    const p = Object.prototype.hasOwnProperty.call(L.PROJECTS, body.project) ? L.rules(L.scaleOf(st)).projects[body.project] : null;
     if (!p) bad('Unknown project.');
     if (p.once && me.built[body.project]) bad('You already have the ' + p.name + '.');
     if (!L.canBuild(st, me, body.project)) bad('You cannot afford the ' + p.name + ' yet.');

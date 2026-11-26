@@ -1,4 +1,6 @@
-process.env.DATA_FILE='/tmp/castaway-test-games.json';
+// SCALE=2 node test.js runs the same checks at another year level (default 1, today's game).
+const S=+process.env.SCALE||1;
+process.env.DATA_FILE='/tmp/castaway-test-games-'+S+'.json';
 try{require('fs').unlinkSync(process.env.DATA_FILE);}catch(e){}
 const assert=require('assert'); const http=require('http');
 const {server,games,flush}=require('./server.js');
@@ -16,7 +18,7 @@ function sse(path){ // returns {last(), close()}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
   await new Promise(r=>server.listen(0,r)); base='http://localhost:'+server.address().port;
-  let r=await call('POST','/api/create',{rounds:4,timerLen:240}); const code=r.j.code, TT=r.j.teacherToken; t('create',/^[A-Z]{4}$/.test(code));
+  let r=await call('POST','/api/create',{rounds:4,timerLen:240,scale:S}); const code=r.j.code, TT=r.j.teacherToken; t('create',/^[A-Z]{4}$/.test(code));
   const info=(await call('GET','/api/g/'+code+'/info')).j; t('info 6 islands',info.islands.length===6);
   const tok=[]; for(let k=0;k<6;k++){ const j=(await call('POST','/api/g/'+code+'/join',{island:k})).j; tok.push(j.token); }
   t('join taken',(await call('POST','/api/g/'+code+'/join',{island:2})).status===409);
@@ -80,7 +82,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   t('close market',(await T('advance')).status===200);
   t('offers expired on close',games[code].offers.filter(o=>o.status==='pending').length===0);
   t('settle',(await T('settle')).status===200);
-  inv(0).stone=5; inv(0).wood=5;
+  inv(0).stone=5*S; inv(0).wood=5*S;
   r=await P(0,'buy',{project:'well'}); t('buy ok',r.status===200&&games[code].st.islands[0].built.well);
   r=await P(0,'buy',{project:'well'}); t('buy twice blocked',r.status===400);
   inv(2).stone=0; inv(2).wood=0;
@@ -107,13 +109,13 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   // play again
   t('students cannot restart',(await call('POST','/api/g/'+code+'/teacher/restart',{},tok[0])).status===403);
   t('restart',(await T('restart')).status===200);
-  const ng=games[code].st; t('new game state',!ng.over&&ng.round===1&&ng.phase===0&&ng.rounds===4&&ng.islands.every(i=>i.pts===0)&&games[code].offers.length===0);
+  const ng=games[code].st; t('new game state',ng.scale===S&&!ng.over&&ng.round===1&&ng.phase===0&&ng.rounds===4&&ng.islands.every(i=>i.pts===0)&&games[code].offers.length===0);
   t('teams kept after restart',!!games[code].teams[0]&&(await P(0,'offer',{to:1,give:[{r:'food',q:1}],get:[{r:'wood',q:1}]})).status===400);
   await sleep(150); t('SSE pushes restart',stu.last().over===false&&stu.last().round===1&&!stu.last().scores);
   await T('reveal');
   t('restart mid-game',(await T('restart')).status===200&&games[code].st.round===1&&games[code].st.phase===0&&!games[code].st.eventRevealed);
   // second game: guards added after review
-  r=await call('POST','/api/create',{rounds:3,timerLen:60}); const c2=r.j.code, TT2=r.j.teacherToken;
+  r=await call('POST','/api/create',{rounds:3,timerLen:60,scale:S}); const c2=r.j.code, TT2=r.j.teacherToken;
   const lone=(await call('POST','/api/g/'+c2+'/join',{island:0})).j.token;
   const T2=(a,b)=>call('POST','/api/g/'+c2+'/teacher/'+a,b||{},TT2);
   const step=async()=>(await call('GET','/api/g/'+c2+'/state?token='+TT2)).j.step;
@@ -130,5 +132,5 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const lan=await fetch(base+'/lan',{headers:{'x-forwarded-for':'203.0.113.9'}}).then(r=>r.json());
   t('lan addresses hidden from outside',Array.isArray(lan.addresses)&&lan.addresses.length===0);
   const html=await fetch(base+'/play'); t('nosniff header',html.headers.get('x-content-type-options')==='nosniff');
-  console.log(ok,'checks passed'); stu.close(); tea.close(); server.close(); process.exit(process.exitCode||0);
+  console.log(ok,'checks passed at scale '+S); stu.close(); tea.close(); server.close(); process.exit(process.exitCode||0);
 })().catch(e=>{console.error(e);process.exit(1);});

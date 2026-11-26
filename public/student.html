@@ -281,21 +281,22 @@ function composerHTML(){
     if(!i.claimed) return '<button class="tchip" style="--c:'+esc(i.color)+'" disabled title="No team on this island">'+esc(i.name)+'<br><small>no team</small></button>';
     return '<button class="tchip'+(on?' on':'')+'" style="--c:'+esc(i.color)+'" data-act="to" data-to="'+i.idx+'" aria-pressed="'+on+'">'+esc(i.name)+'</button>';
   }).join('');
+  var step=V.scale||1, cap=V.maxQty||99;
   var side=function(S,title){
     var other=S==='give'?'get':'give', used=picked(S).length;
     var rows=KEYS.map(function(k){
       var q=draft[S][k], have=V.me.inv[k];
       var blocked=draft[other][k]>0;
-      var max=S==='give'?Math.min(99,have):99;
+      var max=S==='give'?Math.min(cap,have):cap;
       var canAdd=!blocked&&q<max&&(q>0||used<2);
       var note=blocked?(S==='give'?'getting':'giving'):(S==='give'?'have '+have:'');
       return '<div class="tg'+(q>0?' on':'')+(blocked||(S==='give'&&!have&&!q)?' off':'')+'">'+
-        '<button class="tg-tap" data-act="q" data-s="'+S+'" data-r="'+k+'" data-d="1" aria-label="Add one '+LABEL[k]+'"'+(canAdd?'':' disabled')+'>'+
+        '<button class="tg-tap" data-act="q" data-s="'+S+'" data-r="'+k+'" data-d="'+step+'" aria-label="Add '+(step===1?'one':step)+' '+LABEL[k]+'"'+(canAdd?'':' disabled')+'>'+
         '<span class="tg-ic" aria-hidden="true">'+ICON[k]+'</span><b class="tg-q num">'+q+'</b><small>'+(note||LABEL[k])+'</small></button>'+
         '<div class="tg-pm"><button class="sec tb" data-act="q" data-s="'+S+'" data-r="'+k+'" data-d="-1" aria-label="One less '+LABEL[k]+'"'+(q>0?'':' disabled')+'>−</button>'+
         '<button class="sec tb" data-act="q" data-s="'+S+'" data-r="'+k+'" data-d="1" aria-label="One more '+LABEL[k]+'"'+(canAdd?'':' disabled')+'>+</button></div></div>';
     }).join('');
-    return '<div class="tside '+S+'"><div class="tside-h"><b>'+title+'</b><small>'+(used>=2?'2 goods max':'tap to add · up to 2 goods')+'</small></div><div class="tgrid">'+rows+'</div></div>';
+    return '<div class="tside '+S+'"><div class="tside-h"><b>'+title+'</b><small>'+(used>=2?'2 goods max':(step>1?'tap adds '+step+' · −/+ for 1 · up to 2 goods':'tap to add · up to 2 goods'))+'</small></div><div class="tgrid">'+rows+'</div></div>';
   };
   var give=picked('give'), get=picked('get'), toI=others.filter(function(i){return i.claimed&&String(i.idx)===String(draft.to);})[0];
   var fmt=function(l){ return l.length?l.map(function(x){return '<b>'+x.q+'</b> '+ICON[x.r];}).join(' + '):'<span class="muted">?</span>'; };
@@ -377,7 +378,8 @@ function onClick(e){
   var b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
   var a=b.dataset.act;
   if(a==='rules'){ openRules(); return; }
-  if(a==='q'){ var S=b.dataset.s, k=b.dataset.r; draft[S][k]=Math.max(0,Math.min(99,draft[S][k]+(+b.dataset.d))); msg=''; render(); }
+  if(a==='q'){ var S=b.dataset.s, k=b.dataset.r, cap=V.maxQty||99; if(S==='give') cap=Math.min(cap,V.me.inv[k]);
+    draft[S][k]=Math.max(0,Math.min(cap,draft[S][k]+(+b.dataset.d))); msg=''; render(); }
   else if(a==='to'){ draft.to=String(draft.to)===b.dataset.to?'':b.dataset.to; msg=''; render(); }
   else if(a==='clear'){ draft=freshDraft(); msg=''; render(); }
   else if(a==='send'){

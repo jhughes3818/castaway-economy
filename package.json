@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Live classroom server for the Castaway Economy game (prototype)",
   "main": "server.js",
-  "scripts": { "start": "node server.js", "test": "node test.js", "build-logic": "python3 build-logic.py" },
+  "scripts": { "start": "node server.js", "test": "node test.js && SCALE=2 node test.js && SCALE=3 node test.js && node test-scale.js", "build-logic": "python3 build-logic.py" },
   "engines": { "node": ">=18" },
   "license": "UNLICENSED"
 }
