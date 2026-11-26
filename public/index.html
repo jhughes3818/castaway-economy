@@ -74,12 +74,16 @@
 <script>
 (function(){
 var $=function(i){return document.getElementById(i);};
-function go(){ var c=$('jc').value.trim().toUpperCase(); if(c.length===4) location.href='/play?c='+c; }
+function go(){ var c=$('jc').value.toUpperCase().replace(/[^A-Z]/g,''); if(c.length===4) location.href='/play?c='+c; }
 $('join').onclick=go; $('jc').onkeydown=function(e){ if(e.key==='Enter') go(); };
 $('create').onclick=function(){
+  $('create').disabled=true; $('err').textContent='';
   fetch('/api/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rounds:+$('rounds').value,timerLen:+$('tlen').value})})
-   .then(function(r){return r.json();}).then(function(j){ if(!j.code) throw new Error('Could not create the game'); localStorage.setItem('castaway-host-'+j.code,j.teacherToken); location.href='/host?c='+j.code; })
-   .catch(function(e){ $('err').textContent=e.message; });
+   .then(function(r){return r.json();}).then(function(j){
+     if(!j.code) throw new Error(j.error||'Could not create the game');
+     try{ localStorage.setItem('castaway-host-'+j.code,j.teacherToken); }catch(e){ throw new Error('This browser is blocking site storage (private mode?). Use a normal window to run the game.'); }
+     location.href='/host?c='+j.code; })
+   .catch(function(e){ $('err').textContent=e.message==='Failed to fetch'?'Could not reach the server.':e.message; $('create').disabled=false; });
 };
 })();
 </script>

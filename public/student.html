@@ -124,8 +124,8 @@ var KEYS=['food','water','wood','stone','coins'];
 var PHASES=['Event','Production','Market','Settle up'];
 var app=document.getElementById('app'), toastEl=document.getElementById('toast');
 var params=new URLSearchParams(location.search);
-var code=(params.get('c')||'').toUpperCase();
-var V=null, offset=0, es=null, draft=freshDraft(), joinInfo=null, msg='', screen='boot';
+var code=(params.get('c')||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,4);
+var V=null, offset=0, es=null, draft=freshDraft(), joinInfo=null, msg='', screen='boot', busy=false;
 var cache={};
 
 function zero(){ return {food:0,water:0,wood:0,stone:0,coins:0}; }
@@ -144,13 +144,20 @@ function api(path,body){
   return fetch('/api/g/'+code+'/'+path,{method:'POST',headers:{'Content-Type':'application/json','x-token':s?s.token:''},body:JSON.stringify(body||{})})
     .then(function(r){return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||'Something went wrong'); return j; });});
 }
-function act(path,body,after){ api(path,body).then(function(){ if(after) after(); }).catch(function(e){ toast(e.message); }); }
+/* One request at a time, so a double tap cannot buy two Feasts or send the same offer twice. */
+function act(path,body,after){
+  if(busy) return;
+  busy=true;
+  api(path,body).then(function(){ if(after) after(); })
+    .catch(function(e){ toast(e.message==='Failed to fetch'?'No connection. Check your wifi and try again.':e.message); })
+    .then(function(){ busy=false; });
+}
 
 /* ---------- screens ---------- */
 function showCode(){
   screen='code'; app.innerHTML='<div class="card"><div class="brand" aria-hidden="true">🏝️</div><h1>Castaway Economy</h1><p class="muted">Type the game code your teacher is showing.</p><input id="codeIn" class="codein" type="text" maxlength="4" autocomplete="off" autocapitalize="characters" aria-label="Game code" placeholder="CODE"><button id="codeGo">Join</button><div class="err" id="codeErr"></div></div>';
   var inp=document.getElementById('codeIn'); inp.focus();
-  function go(){ var c=inp.value.trim().toUpperCase(); if(c.length!==4) return; location.search='?c='+c; }
+  function go(){ var c=inp.value.toUpperCase().replace(/[^A-Z]/g,''); if(c.length!==4){ document.getElementById('codeErr').textContent='The code is 4 letters.'; return; } location.search='?c='+c; }
   document.getElementById('codeGo').onclick=go; inp.onkeydown=function(e){ if(e.key==='Enter') go(); };
 }
 function showPick(){
@@ -260,7 +267,7 @@ function offersHTML(){
   if(past.length){
     h+='<div class="muted">Recent</div>'+past.map(function(o){
       var mine=o.from===me, other=mine?o.toName:o.fromName;
-      var label={done:'done',declined:'declined',cancelled:'cancelled',expired:'timed out',failed:'failed'}[o.status]||o.status;
+      var label={done:'done',declined:'declined',cancelled:'cancelled',expired:'timed out',failed:'failed',undone:'undone'}[o.status]||o.status;
       return '<div class="deal muted"><span class="tag '+(o.status==='done'?'done':'bad')+'">'+label+'</span><span>'+esc(other)+': '+items(mine?o.give:o.get)+' for '+items(mine?o.get:o.give)+(o.note?' ('+esc(o.note)+')':'')+'</span></div>';
     }).join('');
   }
@@ -271,6 +278,7 @@ function composerHTML(){
   var others=V.islands.filter(function(i){return i.idx!==V.me.idx;});
   var chips=others.map(function(i){
     var on=String(draft.to)===String(i.idx);
+    if(!i.claimed) return '<button class="tchip" style="--c:'+esc(i.color)+'" disabled title="No team on this island">'+esc(i.name)+'<br><small>no team</small></button>';
     return '<button class="tchip'+(on?' on':'')+'" style="--c:'+esc(i.color)+'" data-act="to" data-to="'+i.idx+'" aria-pressed="'+on+'">'+esc(i.name)+'</button>';
   }).join('');
   var side=function(S,title){
@@ -289,7 +297,7 @@ function composerHTML(){
     }).join('');
     return '<div class="tside '+S+'"><div class="tside-h"><b>'+title+'</b><small>'+(used>=2?'2 goods max':'tap to add · up to 2 goods')+'</small></div><div class="tgrid">'+rows+'</div></div>';
   };
-  var give=picked('give'), get=picked('get'), toI=others.filter(function(i){return String(i.idx)===String(draft.to);})[0];
+  var give=picked('give'), get=picked('get'), toI=others.filter(function(i){return i.claimed&&String(i.idx)===String(draft.to);})[0];
   var fmt=function(l){ return l.length?l.map(function(x){return '<b>'+x.q+'</b> '+ICON[x.r];}).join(' + '):'<span class="muted">?</span>'; };
   var ready=toI&&give.length&&get.length;
   var summary='<div class="tsum"><span>'+fmt(give)+'</span><span class="arrow" aria-hidden="true">⇄</span><span>'+fmt(get)+'</span></div>';
