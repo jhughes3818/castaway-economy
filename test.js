@@ -103,5 +103,12 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   t('release works',(await T('release',{idx:3})).status===200&&!games[code].teams[3]);
   // persistence
   await sleep(1100); const saved=JSON.parse(require('fs').readFileSync(process.env.DATA_FILE,'utf8')); t('persisted',saved[code]&&saved[code].st.over===true);
+  // play again
+  t('students cannot restart',(await call('POST','/api/g/'+code+'/teacher/restart',{},tok[0])).status===403);
+  t('restart',(await T('restart')).status===200);
+  const ng=games[code].st; t('new game state',!ng.over&&ng.round===1&&ng.phase===0&&ng.rounds===4&&ng.islands.every(i=>i.pts===0)&&games[code].offers.length===0);
+  t('teams kept after restart',!!games[code].teams[0]&&(await P(0,'offer',{to:1,give:[{r:'food',q:1}],get:[{r:'wood',q:1}]})).status===400);
+  await sleep(150); t('SSE pushes restart',stu.last().over===false&&stu.last().round===1&&!stu.last().scores);
+  t('restart blocked mid-game',(await T('restart')).status===400);
   console.log(ok,'checks passed'); stu.close(); tea.close(); server.close(); process.exit(process.exitCode||0);
 })().catch(e=>{console.error(e);process.exit(1);});
