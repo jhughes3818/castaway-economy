@@ -1,7 +1,7 @@
 process.env.DATA_FILE='/tmp/castaway-test-games.json';
 try{require('fs').unlinkSync(process.env.DATA_FILE);}catch(e){}
 const assert=require('assert'); const http=require('http');
-const {server,games}=require('./server.js');
+const {server,games,flush}=require('./server.js');
 let ok=0; const t=(n,c)=>{ if(!c){console.log('FAIL',n); process.exitCode=1;} else ok++; };
 let base;
 async function call(method,path,body,tok){
@@ -74,6 +74,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   r=await P(0,'offer',{to:1,give:[{r:'food',q:1}],get:[{r:'wood',q:1}]}); t('offer after unlock ok',r.status===200);
   // undo
   t('undo last trade',(await T('undo')).status===200);
+  t('undone offer marked for students',games[code].offers.find(o=>o.id===o1.id).status==='undone');
   // phase 3
   r=await P(0,'buy',{project:'well'}); t('buy before settle blocked',r.status===400);
   t('close market',(await T('advance')).status===200);
@@ -101,8 +102,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   await sleep(150); t('game over with scores',tea.last().over&&tea.last().scores.length===6&&stu.last().scores.length===6);
   t('post-game actions blocked',(await P(0,'offer',{to:1,give:[{r:'food',q:1}],get:[{r:'wood',q:1}]})).status===400);
   t('release works',(await T('release',{idx:3})).status===200&&!games[code].teams[3]);
-  // persistence
-  await sleep(1100); const saved=JSON.parse(require('fs').readFileSync(process.env.DATA_FILE,'utf8')); t('persisted',saved[code]&&saved[code].st.over===true);
+  // persistence (flush writes straight away, as on shutdown)
+  flush(); const saved=JSON.parse(require('fs').readFileSync(process.env.DATA_FILE,'utf8')); t('persisted',saved[code]&&saved[code].st.over===true);
   // play again
   t('students cannot restart',(await call('POST','/api/g/'+code+'/teacher/restart',{},tok[0])).status===403);
   t('restart',(await T('restart')).status===200);
@@ -111,5 +112,23 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   await sleep(150); t('SSE pushes restart',stu.last().over===false&&stu.last().round===1&&!stu.last().scores);
   await T('reveal');
   t('restart mid-game',(await T('restart')).status===200&&games[code].st.round===1&&games[code].st.phase===0&&!games[code].st.eventRevealed);
+  // second game: guards added after review
+  r=await call('POST','/api/create',{rounds:3,timerLen:60}); const c2=r.j.code, TT2=r.j.teacherToken;
+  const lone=(await call('POST','/api/g/'+c2+'/join',{island:0})).j.token;
+  const T2=(a,b)=>call('POST','/api/g/'+c2+'/teacher/'+a,b||{},TT2);
+  const step=async()=>(await call('GET','/api/g/'+c2+'/state?token='+TT2)).j.step;
+  let s0=await step(); t('reveal with current step',(await T2('reveal',{step:s0})).status===200);
+  t('stale step rejected (double click)',(await T2('reveal',{step:s0})).status===409&&(await T2('advance',{step:s0})).status===409&&games[c2].st.phase===0);
+  await T2('advance',{step:await step()}); await T2('advance',{step:await step()});
+  t('market open in game 2',games[c2].st.phase===2);
+  games[c2].st.islands[0].inv.food=3;
+  r=await call('POST','/api/g/'+c2+'/team/offer',{to:1,give:[{r:'food',q:1}],get:[{r:'wood',q:1}]},lone);
+  t('offer to island with no team rejected',r.status===400&&/No team/.test(r.j.error));
+  await T2('timer',{op:'start'}); await T2('timer',{op:'add',s:-300});
+  t('taking the timer to zero locks the market',games[c2].st.locked===true&&games[c2].timer.left===0&&!games[c2].timer.running);
+  t('add time after zero reopens',(await T2('timer',{op:'add',s:30})).status===200&&games[c2].st.locked===false);
+  const lan=await fetch(base+'/lan',{headers:{'x-forwarded-for':'203.0.113.9'}}).then(r=>r.json());
+  t('lan addresses hidden from outside',Array.isArray(lan.addresses)&&lan.addresses.length===0);
+  const html=await fetch(base+'/play'); t('nosniff header',html.headers.get('x-content-type-options')==='nosniff');
   console.log(ok,'checks passed'); stu.close(); tea.close(); server.close(); process.exit(process.exitCode||0);
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -20,6 +20,8 @@ const PUBLIC = path.join(__dirname, 'public');
 const RESK = L.RES.concat('coins');
 const MAX_PENDING_OUT = 4;
 const GAME_TTL_MS = 36 * 3600 * 1000;
+const MAX_GAMES = +process.env.MAX_GAMES || 300;        // keeps memory bounded on a public host
+const CREATE_LIMIT = 30, CREATE_WINDOW_MS = 10 * 60000; // game creations per address per window
 
 const games = {};
 
@@ -39,32 +41,50 @@ const bad = (msg, code) => { throw new HttpError(code || 400, msg); };
 
 /* ---------- persistence ---------- */
 let saveTimer = null;
+function writeNow() {
+  try {
+    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+    const out = {};
+    Object.keys(games).forEach((c) => {
+      const g = games[c];
+      out[c] = { code: g.code, tt: g.tt, st: g.st, teams: g.teams, offers: g.offers, nextOffer: g.nextOffer, timer: { len: g.timer.len, left: timerLeft(g) }, created: g.created, touched: g.touched };
+    });
+    fs.writeFileSync(DATA_FILE + '.tmp', JSON.stringify(out));
+    fs.renameSync(DATA_FILE + '.tmp', DATA_FILE);
+  } catch (e) { console.error('save failed', e.message); }
+}
 function save() {
   if (saveTimer) return;
-  saveTimer = setTimeout(() => {
-    saveTimer = null;
-    try {
-      fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-      const out = {};
-      Object.keys(games).forEach((c) => {
-        const g = games[c];
-        out[c] = { code: g.code, tt: g.tt, st: g.st, teams: g.teams, offers: g.offers, nextOffer: g.nextOffer, timer: { len: g.timer.len, left: timerLeft(g) }, created: g.created, touched: g.touched };
-      });
-      fs.writeFileSync(DATA_FILE + '.tmp', JSON.stringify(out));
-      fs.renameSync(DATA_FILE + '.tmp', DATA_FILE);
-    } catch (e) { console.error('save failed', e.message); }
-  }, 800);
+  saveTimer = setTimeout(() => { saveTimer = null; writeNow(); }, 800);
+}
+/** Write any pending change straight away (used on shutdown so the last moves are not lost). */
+function flush() {
+  if (!saveTimer) return;
+  clearTimeout(saveTimer); saveTimer = null; writeNow();
 }
 function load() {
-  try {
-    const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    Object.keys(raw).forEach((c) => {
+  let text;
+  try { text = fs.readFileSync(DATA_FILE, 'utf8'); } catch (e) {
+    if (e.code !== 'ENOENT') console.error('could not read saved games:', e.message);
+    return;
+  }
+  let raw;
+  try { raw = JSON.parse(text); } catch (e) {
+    // Keep the broken file for inspection instead of silently overwriting it on the next save.
+    const keep = DATA_FILE + '.corrupt-' + now();
+    try { fs.renameSync(DATA_FILE, keep); } catch (e2) { /* ignore */ }
+    console.error('saved games file was unreadable; moved it to', keep);
+    return;
+  }
+  Object.keys(raw || {}).forEach((c) => {
+    try {
       const r = raw[c];
+      const len = (r.timer && r.timer.len) || 240;
       games[c] = { code: r.code, tt: r.tt, st: r.st, teams: r.teams || {}, offers: r.offers || [], nextOffer: r.nextOffer || 1,
-        timer: { len: r.timer.len, left: r.timer.left, running: false, endsAt: null, tid: null }, clients: new Set(), created: r.created, touched: r.touched || r.created };
-    });
-    console.log('restored', Object.keys(games).length, 'game(s)');
-  } catch (e) { /* first run */ }
+        timer: { len, left: r.timer && r.timer.left != null ? r.timer.left : len, running: false, endsAt: null, tid: null }, clients: new Set(), created: r.created, touched: r.touched || r.created };
+    } catch (e) { console.error('skipped saved game', c, e.message); }
+  });
+  console.log('restored', Object.keys(games).length, 'game(s)');
 }
 
 /* ---------- timer ---------- */
@@ -81,13 +101,16 @@ function stopTimer(g) {
 function expireOffers(g) {
   g.offers.forEach((o) => { if (o.status === 'pending') o.status = 'expired'; });
 }
+function lockMarket(g) {
+  if (g.st.phase === 2) { g.st.locked = true; expireOffers(g); }
+}
 function startTimer(g) {
   const t = g.timer;
   if (t.running || t.left <= 0) return;
   t.running = true; t.endsAt = now() + t.left * 1000;
   t.tid = setTimeout(() => {
     t.tid = null; t.running = false; t.left = 0; t.endsAt = null;
-    if (g.st.phase === 2) { g.st.locked = true; expireOffers(g); }
+    lockMarket(g);
     changed(g);
   }, t.left * 1000 + 60);
 }
@@ -99,6 +122,7 @@ function createGame(opts) {
   const n = 6; // balance is only validated for 6 islands
   const rounds = Math.max(3, Math.min(8, +opts.rounds || 6));
   const len = Math.max(30, Math.min(900, +opts.timerLen || 240));
+  if (Object.keys(games).length >= MAX_GAMES) bad('This server is full. Try again later.', 503);
   const code = newCode();
   const g = { code, tt: token(), st: L.newState(n, rounds, null), teams: {}, offers: [], nextOffer: 1,
     timer: { len, left: len, running: false, endsAt: null, tid: null }, clients: new Set(), created: now(), touched: now() };
@@ -160,6 +184,7 @@ function viewFor(g, role, idx) {
     v.undoable = (() => { const t = st.trades[st.trades.length - 1]; return !!(t && t.round === st.round && st.phase === 2); })();
     v.buys = (st.buildLog || []).filter((b) => b.round === st.round).slice(-8).reverse().map((b) => ({ island: st.islands[b.i].name, project: L.PROJECTS[b.pid].name, color: st.islands[b.i].color }));
     v.joinPath = '/play?c=' + g.code;
+    v.step = stepOf(st);
   }
   return v;
 }
@@ -169,6 +194,10 @@ function broadcast(g) {
   });
 }
 function changed(g) { g.touched = now(); save(); broadcast(g); }
+
+/** Where the game is right now. The teacher screen echoes it back so a double click or a
+ *  second teacher tab cannot run the same step twice (for example skipping a phase). */
+function stepOf(st) { return [st.round, st.phase, st.eventRevealed ? 1 : 0, st.settled ? 1 : 0, st.over ? 1 : 0].join(':'); }
 
 /* ---------- auth ---------- */
 function auth(g, tok) {
@@ -181,6 +210,9 @@ function auth(g, tok) {
 /* ---------- teacher actions ---------- */
 function teacherAction(g, action, body) {
   const st = g.st;
+  if (body.step != null && ['reveal', 'advance', 'settle'].indexOf(action) >= 0 && String(body.step) !== stepOf(st)) {
+    bad('The game has already moved on.', 409);
+  }
   if (st.over && action !== 'release' && action !== 'restart') bad('The game is over.');
   switch (action) {
     case 'restart': {
@@ -219,12 +251,19 @@ function teacherAction(g, action, body) {
         const was = t.running;
         stopTimer(g); t.left = Math.max(0, t.left + s);
         if (t.left > 0 && st.locked) st.locked = false;
-        if (was) startTimer(g);
+        if (t.left === 0) lockMarket(g); // taking the clock to zero closes the market, same as running out
+        else if (was) startTimer(g);
       } else bad('Unknown timer command.');
       break;
     }
-    case 'undo':
-      if (!L.undoTrade(st)) bad('Nothing to undo.'); break;
+    case 'undo': {
+      const last = st.trades[st.trades.length - 1];
+      if (!L.undoTrade(st)) bad('Nothing to undo.');
+      // Show the students that the deal was reversed, not just "done".
+      const o = g.offers.slice().reverse().find((x) => x.status === 'done' && x.round === last.round && x.from === last.a && x.to === last.b);
+      if (o) { o.status = 'undone'; o.note = 'by the teacher'; }
+      break;
+    }
     case 'release': {
       const k = +body.idx;
       if (!(k >= 0 && k < st.islands.length)) bad('Unknown island.');
@@ -263,6 +302,7 @@ function teamAction(g, idx, action, body) {
     marketOpen(g);
     const to = Number(body.to);
     if (!Number.isInteger(to) || to < 0 || to >= st.islands.length || to === idx) bad('Pick another island.');
+    if (!g.teams[to]) bad('No team is playing ' + st.islands[to].name + ' yet.');
     const give = cleanItems(body.give), get = cleanItems(body.get);
     if (!give || !get) bad('Each side needs 1 or 2 different items, in whole numbers.');
     if (get.some((h) => give.some((x) => x.r === h.r))) bad('Both sides cannot give the same thing.');
@@ -305,13 +345,27 @@ function teamAction(g, idx, action, body) {
 function lanAddresses() {
   const out = [], ifs = os.networkInterfaces();
   Object.keys(ifs).forEach((n) => (ifs[n] || []).forEach((a) => { if (a.family === 'IPv4' && !a.internal) out.push(a.address); }));
-  return out;
+  // Home/school wifi is usually 192.168.x or 10.x; put those before VPN or virtual adapters.
+  const rank = (a) => (/^192\.168\./.test(a) ? 0 : /^10\./.test(a) ? 1 : /^172\.(1[6-9]|2\d|3[01])\./.test(a) ? 2 : 3);
+  return out.sort((a, b) => rank(a) - rank(b));
+}
+function isLoopback(req) {
+  const a = req.socket.remoteAddress || '';
+  return !req.headers['x-forwarded-for'] && (a === '127.0.0.1' || a === '::1' || a === '::ffff:127.0.0.1');
+}
+const createLog = new Map(); // address -> recent creation times
+function allowCreate(req) {
+  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const cut = now() - CREATE_WINDOW_MS, list = (createLog.get(ip) || []).filter((t) => t > cut);
+  if (list.length >= CREATE_LIMIT) return false;
+  list.push(now()); createLog.set(ip, list);
+  return true;
 }
 
 /* ---------- http ---------- */
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json', '.pdf': 'application/pdf' };
 function send(res, code, body, headers) {
-  const h = Object.assign({ 'Cache-Control': 'no-store' }, headers || {});
+  const h = Object.assign({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY' }, headers || {});
   if (typeof body === 'object' && !Buffer.isBuffer(body)) { h['Content-Type'] = 'application/json'; body = JSON.stringify(body); }
   res.writeHead(code, h); res.end(body);
 }
@@ -339,12 +393,14 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && parts[0] === 'qrcode.js') return serveStatic(res, 'qrcode.js');
     if (req.method === 'GET' && parts[0] === 'theme.css') return serveStatic(res, 'theme.css');
     if (req.method === 'GET' && parts[0] === 'teacher-guide.pdf') return serveStatic(res, 'teacher-guide.pdf');
-    if (req.method === 'GET' && parts[0] === 'lan') return send(res, 200, { addresses: lanAddresses(), port: server.address() && server.address().port });
+    // Only the computer running the server needs its wifi address (to build the QR code); do not reveal it to the internet.
+    if (req.method === 'GET' && parts[0] === 'lan') return send(res, 200, isLoopback(req) ? { addresses: lanAddresses(), port: server.address() && server.address().port } : { addresses: [] });
     if (req.method === 'GET' && parts[0] === 'health') return send(res, 200, { ok: true, games: Object.keys(games).length });
 
     if (parts[0] === 'api') {
       if (req.method === 'POST' && parts[1] === 'create') {
         const body = await readBody(req);
+        if (!allowCreate(req)) bad('Too many games created from here. Wait a few minutes.', 429);
         const g = createGame(body);
         return send(res, 200, { code: g.code, teacherToken: g.tt });
       }
@@ -399,9 +455,18 @@ load();
 setInterval(() => {
   const cut = now() - GAME_TTL_MS;
   Object.keys(games).forEach((c) => { if (games[c].touched < cut && games[c].clients.size === 0) { stopTimer(games[c]); delete games[c]; save(); } });
+  const old = now() - CREATE_WINDOW_MS;
+  createLog.forEach((list, ip) => { if (!list.some((t) => t > old)) createLog.delete(ip); });
 }, 600000).unref();
 
 if (require.main === module) {
+  // Hosts such as Render send SIGTERM on every redeploy; save the last moves before exiting.
+  ['SIGINT', 'SIGTERM'].forEach((sig) => process.on(sig, () => { flush(); process.exit(0); }));
+  server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') console.error('Port ' + PORT + ' is already in use. Close the other copy of the server, or run with PORT=3001.');
+    else console.error(e);
+    process.exit(1);
+  });
   server.listen(PORT, '0.0.0.0', () => {
     console.log('Castaway Economy live server running.');
     console.log('  On this computer:  http://localhost:' + PORT);
@@ -409,4 +474,4 @@ if (require.main === module) {
     console.log('Open the "for phones" address on the teacher computer too, so the QR code works.');
   });
 }
-module.exports = { server, games, createGame };
+module.exports = { server, games, createGame, flush };
