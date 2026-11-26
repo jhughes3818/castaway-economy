@@ -392,7 +392,10 @@ function connect(){
   if(es) es.close();
   es=new EventSource('/api/g/'+code+'/stream?token='+encodeURIComponent(s.token));
   es.onmessage=function(m){
-    var v=JSON.parse(m.data); offset=v.serverNow-Date.now(); V=v;
+    var v=JSON.parse(m.data); offset=v.serverNow-Date.now();
+    // teacher restarted the game: drop any half-built offer and say so
+    if(V&&!v.over&&(V.over||v.round<V.round||(v.round===V.round&&v.phase<V.phase))){ draft=freshDraft(); toast('Your teacher started a new game. Back to round 1.'); }
+    V=v;
     if(screen!=='game') skeleton();
     render();
   };
