@@ -161,6 +161,7 @@ function render(force){
     var rows=v.scores.map(function(s,i){return '<tr><td>'+(i+1)+'. <span style="color:'+esc(s.color)+'">&#9679;</span> '+esc(s.name)+'</td><td class="num">'+s.pts+'</td><td class="num">'+s.coins+' &rarr; +'+s.bonus+'</td><td class="num"><b>'+s.total+'</b></td></tr>';}).join('');
     body='<div style="display:flex;flex-direction:column;gap:16px;margin-top:16px"><div><p class="muted" style="margin:0 0 4px">Final scores after '+v.rounds+' rounds</p><div class="winner">'+(tie?'It is a tie at the top: <span>'+v.scores.filter(function(s){return s.total===w.total&&s.coins===w.coins;}).map(function(s){return esc(s.name);}).join(' and ')+'</span>':'<span>'+esc(w.name)+'</span> wins with '+w.total+' points')+'</div></div>'+
       '<section class="panel"><h2>Final scores</h2><div class="tablewrap"><table><tr><th scope="col">Island</th><th scope="col">Points</th><th scope="col">Coins to bonus</th><th scope="col">Total</th></tr>'+rows+'</table></div><p class="muted" style="font-size:.85rem">Every '+v.constants.coinsPerPoint+' coins left over is worth 1 bonus point.</p></section>'+
+      '<section class="panel"><h2>Play again?</h2><p class="muted">Start a new game with the same code. Teams stay joined and their screens switch to round 1.</p><div class="actionrow"><button class="btn primary big" data-restart="1">Start a new game &rarr;</button>'+(err?'<span class="err" role="alert">'+esc(err)+'</span>':'')+'<a class="btn" href="/">New game with different settings</a></div></section>'+
       '<section class="islands" aria-label="Islands">'+v.full.map(islandHTML).join('')+'</section></div>';
   } else {
     body=standingsHTML(v)+'<main class="board"><section class="islands" aria-label="Islands">'+v.full.map(islandHTML).join('')+'</section><aside class="side">'+panels+'</aside></main>';
@@ -181,6 +182,7 @@ app.addEventListener('click',function(e){
   if(b.dataset.t){ var o={op:b.dataset.t}; if(b.dataset.s) o.s=+b.dataset.s; return post('timer',o); }
   if(b.dataset.vid) return openVid();
   if(b.dataset.undo) return post('undo');
+  if(b.dataset.restart){ if(confirm('Start a new game? The final scores will be cleared.')) post('restart'); return; }
   if(b.dataset.rel){ if(confirm('Release this island so another device can join it?')) post('release',{idx:+b.dataset.rel}); }
 });
 var vid=document.getElementById('vid'), vframe=document.getElementById('vidframe');

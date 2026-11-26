@@ -181,8 +181,17 @@ function auth(g, tok) {
 /* ---------- teacher actions ---------- */
 function teacherAction(g, action, body) {
   const st = g.st;
-  if (st.over && action !== 'release') bad('The game is over.');
+  if (st.over && action !== 'release' && action !== 'restart') bad('The game is over.');
   switch (action) {
+    case 'restart': {
+      // Same code, same rounds and timer, teams stay joined, so phones move straight to round 1.
+      if (!st.over) bad('Finish the game before starting a new one.');
+      stopTimer(g);
+      g.st = L.newState(st.islands.length, st.rounds, null);
+      g.offers = [];
+      g.timer.left = g.timer.len;
+      break;
+    }
     case 'reveal':
       if (st.phase !== 0) bad('The event is only revealed at the start of a round.');
       L.revealEvent(st); break;

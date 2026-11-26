@@ -203,7 +203,7 @@ function tick(){
 }
 function statusHTML(){
   var h='', V_=V;
-  if(V_.over) return '<div class="banner good">The game is over. See the final scores below.</div>';
+  if(V_.over) return '<div class="banner good">The game is over. See the final scores below. If your teacher starts a new game, this screen will switch to round 1.</div>';
   var ev=V_.event;
   if(V_.phase===0){
     if(!ev) return '<div class="card"><h2>Waiting for the event</h2><p class="muted">Your teacher will reveal this round\'s event card.</p></div>';
