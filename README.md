@@ -27,7 +27,7 @@ temporary disk a restart can lose a game in progress.
 - `logic.js`: GENERATED game rules. Rebuild with `python3 build-logic.py` after changing the
   classroom page (`../castaway-economy.html`). Rules and balance stay in one place.
 - `public/index.html`, `student.html`, `host.html`: the three screens.
-- `test.js`: 54 checks (join, offers, locking, buying, a full game, restart). Run `node test.js`.
+- `test.js`: 53 checks (join, offers, locking, buying, a full game, restart). Run `node test.js`.
 
 ## Prototype limits
 - 6 islands only (balance has only been tested for 6).
