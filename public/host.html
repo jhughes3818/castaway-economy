@@ -23,6 +23,7 @@
 .joinbar .qr img{background:#fff;padding:8px;border-radius:12px;border:2px solid var(--line);display:block;image-rendering:pixelated}
 .joinbar .code{font-family:var(--display);font-size:3rem;letter-spacing:.14em;color:var(--sea-deep);line-height:1}
 .joinbar .url{font-size:1.05rem}
+.joinbar .level{display:inline-block;margin-top:6px;font-weight:900;background:#fff1c9;border:2px solid var(--sun-deep);border-radius:999px;padding:2px 12px;font-size:.95rem}
 .joinbar .joined{margin-left:auto;font-weight:900;background:var(--bg);border-radius:999px;padding:6px 14px}
 .standings{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:16px 0;padding:0}
 .standings li{display:flex;align-items:center;gap:8px;background:var(--surface);border:2px solid var(--line);border-radius:999px;padding:4px 14px 4px 8px;font-weight:800}
@@ -187,7 +188,7 @@ function render(force){
   }
   var steps=PHASES.map(function(p,i){var cls=v.over||i<v.phase?'done':i===v.phase?'now':''; return '<li class="'+cls+'"'+(i===v.phase&&!v.over?' aria-current="step"':'')+'>'+(i+1)+' '+p+'</li>';}).join('');
   var html='<header class="top sea"><h1><span aria-hidden="true">🏝️</span>Castaway Economy</h1><ol class="stepper">'+steps+'</ol><button class="vidbtn" data-vid="1">&#9654; How to play</button>'+(v.over?'':'<button class="vidbtn" data-newgame="1">&#8635; Restart</button>')+'<div class="roundtag">'+(v.over?'Game over':'Round '+v.round+' of '+v.rounds)+'</div></header>'+
-    '<div class="joinbar"><div class="qr">'+qr+'</div><div><div class="muted">Students go to <b class="url">'+esc(base.replace(/^https?:\/\//,''))+'/play</b> and enter</div><div class="code">'+esc(v.code)+'</div></div><div class="joined">'+joined+' of '+v.islands.length+' teams joined</div></div>'+body;
+    '<div class="joinbar"><div class="qr">'+qr+'</div><div><div class="muted">Students go to <b class="url">'+esc(base.replace(/^https?:\/\//,''))+'/play</b> and enter</div><div class="code">'+esc(v.code)+'</div>'+(v.level?'<div class="level" title="Every amount in this game is multiplied by '+v.scale+'">'+esc(v.level)+' (&times;'+v.scale+')</div>':'')+'</div><div class="joined">'+joined+' of '+v.islands.length+' teams joined</div></div>'+body;
   if(force||html!==cache){ app.innerHTML=html; cache=html; }
   tick();
 }

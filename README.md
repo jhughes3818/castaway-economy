@@ -32,8 +32,22 @@ fast one address can create them.
   for `../castaway-economy.html`). Rules and balance stay in one place. If you only have this
   repository, edit `logic.js` directly and run the tests.
 - `public/index.html`, `student.html`, `host.html`: the three screens.
-- `test.js`: 62 checks (join, offers, locking, buying, a full game, restart, double-click guard). Run `node test.js`.
+- `test.js`: 62 checks (join, offers, locking, buying, a full game, restart, double-click guard). Run `node test.js`,
+  or `SCALE=2 node test.js` to run them at another year level.
+- `test-scale.js`: 99 checks that every scaled amount is base x S and points stay proportional. `npm test` runs everything.
+- `sim.js`: bot-simulation balance harness. `node sim.js 3000` compares win share and needs met at scale 1, 2 and 3.
 - `browser-test.py`: optional end-to-end check in a real browser (needs Python Playwright).
+- `browser-test-scale.js`: a full 6-round game at scale 3 in a real browser (needs Node Playwright).
+
+## Year level (scale)
+The teacher picks a year level when creating a game. It sets a scale that is fixed for the whole game:
+Years 4 to 6 = x1 (today's game), Years 7 to 8 = x2, Years 9 to 12 = x3. At scale S every amount is
+multiplied by S: needs and tax, production (and the boat and well), project costs and points, start
+coins, event amounts and the "all needs met" bonus. Two things stay the same on purpose: 2 points lost
+per missing unit and 4 coins per point. Because teams hold S times the goods and coins, both already
+give S times the points, so every source of points grows together. Halving events round down, so at
+odd results scales differ very slightly. The level table is `YEAR_LEVELS` in `logic.js` (and `LEVELS`
+in `public/index.html`). Balance has been validated at scale 1 only; see `sim.js`.
 
 ## Prototype limits
 - 6 islands only (balance has only been tested for 6).
